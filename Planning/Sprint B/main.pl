@@ -1,5 +1,6 @@
 % :- ensure_loaded('connectHttp').
-:- ensure_loaded('testKnowledgeBase').
+:- ensure_loaded('BaseConhecimento').
+
 
 
 :- ensure_loaded('algorithms').
