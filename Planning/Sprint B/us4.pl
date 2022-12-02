@@ -328,13 +328,14 @@ idArmazem('Vila Nova de Gaia',17).
 cidadeArmazem(5).
 
 
-# User Story 4
+ 
+/*User Story 4
 
 
 ##### HEURISTICA 1- MAIS PROXIMO TEMPO OU DISTANCIA
 
 #retorna o armazem mais proximo. Recebe o armazem de origem, a lista de todos os armazens e o tempo. Vai entao procurar o camiao que tem o mesmo armazem de origem, o de destino e o mesmo tempo.
-#calcula o menor tempo entre os armazens, relativamente ao de origem e o que tiver menor fica o armazem escolhido mais proximo
+#calcula o menor tempo entre os armazens, relativamente ao de origem e o que tiver menor fica o armazem escolhido mais proximo*/
 
 armazemMaisProximo(_, [], 1000000,_):-!.
 armazemMaisProximo(Origem, [A1|Armazens], MenorTempo, Armazem):-armazemMaisProximo(Origem,Armazens,MenorTempo1,Armazem1),
@@ -342,10 +343,12 @@ armazemMaisProximo(Origem, [A1|Armazens], MenorTempo, Armazem):-armazemMaisProxi
                                                                 ((Tempo<MenorTempo1,!, MenorTempo is Tempo, Armazem = A1);MenorTempo is MenorTempo1, Armazem = Armazem1).
 
 
-# pior caso tempo-0(b^m) pior caso espaco-0(b^m)
+
+/*# pior caso tempo-0(b^m) pior caso espaco-0(b^m)
+(bfs)-best first search
 #mais rapido e eficiente q o breadth
 # recebe o armazem de origem, lista de armazens e retorna a lista com os troços entre os armazens mais proximos
-#a partir do armazem/cidade origem e da lista vai buscar o armazem mais proximo do da origem, de seguida apaga esse ja visto da lista dos armazens e manda o armazem mais proximo da origem encontrado como origem para o bfs
+#a partir do armazem,cidade origem e da lista vai buscar o armazem mais proximo da origem, de seguida apaga esse ja visto da lista dos armazens e manda o armazem mais proximo da origem encontrado como origem para o bfs*/
 
 bfsArmazemMaisProximo(_,[],[]):-!.
 bfsArmazemMaisProximo(Origem,[A|RestantesArmazens],[ArmazemSeguinte|Viagem]):-armazemMaisProximo(Origem,[A|RestantesArmazens],_,ArmazemSeguinte),
@@ -353,9 +356,10 @@ bfsArmazemMaisProximo(Origem,[A|RestantesArmazens],[ArmazemSeguinte|Viagem]):-ar
                                                                               bfsArmazemMaisProximo(ArmazemSeguinte,ArmazensEmFalta,Viagem).
 
 
-#tendo em conta a data, o camiao, a lista dos troços de armazens(as viagens) e o tempo, obter a melhor viagem
-# vai entao começar por arranjar todos os armazens (onde devam ser feitas entregas naquela data), numa lista, de seguida arranja o armazem/cidade origem, que vai ser utilizado no bfs para obter a lista de viagens 
-# finalmente a partir da data , camiao e viagens, vai determinar os tempos para poder comparar e descobrir o melhor
+
+/*#tendo em conta a data, o camiao, a lista dos troços de armazens(as viagens) e o tempo, obter a melhor viagem
+# vai entao começar por arranjar todos os armazens (onde devam ser feitas entregas naquela data), numa lista, de seguida arranja o armazem,cidade origem, que vai ser utilizado no bfs para obter a lista de viagens 
+# finalmente a partir da data , camiao e viagens, vai determinar os tempos para poder comparar e descobrir o melhor*/
 
 melhorViagemArmazemMaisProximo(Data, Camiao, Viagem, Tempo):-armazensViagem(ArmazensVisitar,Data),
                                                              cidadeArmazem(Origem),
@@ -363,11 +367,12 @@ melhorViagemArmazemMaisProximo(Data, Camiao, Viagem, Tempo):-armazensViagem(Arma
                                                              determinarTempo(Data, Camiao, Viagem, Tempo), !.
 
 
-##### HEURISTICA 2- ENTREGA MAIOR MASSA
+
+/*##### HEURISTICA 2- ENTREGA MAIOR MASSA
 
 #para determinar o armazem cuja entrega tem maior massa
 # recebe a lista de armazens, data e a massa para a posterior comparaçao 
-# começa por receber os dados e compará-los com os da entrega, neste caso comparar a MaiorMassa1 com a massa da entrega respetiva naquela data e para o armazem fornecido A1
+# começa por receber os dados e compará-los com os da entrega, neste caso comparar a MaiorMassa1 com a massa da entrega respetiva naquela data e para o armazem fornecido A1*/
 
 entregaMaisMassa([],_, 0,_):-!.
 entregaMaisMassa([A1|Armazens], Data, MaiorMassa, Armazem):-entregaMaisMassa(Armazens,Data,MaiorMassa1,Armazem1),
@@ -375,8 +380,8 @@ entregaMaisMassa([A1|Armazens], Data, MaiorMassa, Armazem):-entregaMaisMassa(Arm
                                                            ((Massa>MaiorMassa1,!, MaiorMassa is Massa, Armazem = A1);MaiorMassa is MaiorMassa1, Armazem = Armazem1),!.
 
 
-# recebe a data, lista de armazens e retorna a lista com os troços entre os armazens mais proximos
-#a partir da data e da lista vai buscar a entrega com maior massa para esse armazem, de seguida apaga esse ja visto da lista dos armazens e manda a data e os armazens seguintes para o bfs
+/*# recebe a data, lista de armazens e retorna a lista com os troços entre os armazens mais proximos
+#a partir da data e da lista vai buscar a entrega com maior massa para esse armazem, de seguida apaga esse ja visto da lista dos armazens e manda a data e os armazens seguintes para o bfs*/
 
 bfsArmazemMaisMassa(_,[],[]):-!.
 bfsArmazemMaisMassa(Data,[A|RestantesArmazens],[ArmazemSeguinte|Viagem]):-entregaMaisMassa([A|RestantesArmazens],Data,_,ArmazemSeguinte),
@@ -384,9 +389,9 @@ bfsArmazemMaisMassa(Data,[A|RestantesArmazens],[ArmazemSeguinte|Viagem]):-entreg
                                                                               bfsArmazemMaisMassa(Data, ArmazensEmFalta,Viagem).
 
 
-#tendo em conta a data, o camiao, a lista dos troços de armazens(as viagens) e o tempo, obter a melhor viagem
+/*#tendo em conta a data, o camiao, a lista dos troços de armazens(as viagens) e o tempo, obter a melhor viagem
 # vai entao começar por arranjar todos os armazens (onde devam ser feitas entregas naquela data), numa lista, de seguida vai mandar essa lista e a data para o bfs e vai obter a lista de viagens 
-# finalmente a partir da data , camiao e viagens, vai determinar os tempos para poder comparar e descobrir o melhor
+# finalmente a partir da data , camiao e viagens, vai determinar os tempos para poder comparar e descobrir o melhor*/
 
 melhorViagemArmazemMaisMassa(Data, Camiao, Viagem, Tempo):-armazensViagem(ArmazensVisitar,Data),
                                                              bfsArmazemMaisMassa(Data,ArmazensVisitar,Viagem),
@@ -396,12 +401,12 @@ melhorViagemArmazemMaisMassa(Data, Camiao, Viagem, Tempo):-armazensViagem(Armaze
 
 
 
-##### HEURISTICA 3- COMBINAR TEMPO COM A MASSA 
+/*##### HEURISTICA 3- COMBINAR TEMPO COM A MASSA 
 
 # obter o armazem cuja entrega tem melhor relacao entre o tempo e a massa 
-# recebe o armazem/cidade origem, a lista dos armazens, a data e a relaçao(para posterior comparaçao),
+# recebe o armazem,cidade origem, a lista dos armazens, a data e a relaçao(para posterior comparaçao),
 # começa entao por receber os dados e vai buscar o tempo do camiao (cujo armazem de origem e destino sao os mesmos que os recebidos na funçao) e vai buscar a massa da entrega( cuja data e armazem de destino sao os mesmos recebidos na funçao e do camiao)
-# faz-se a comparaçao entre a relaçao massa da entrega/ tempo do camiao e a relacao dos valores iniciais para obter o armazem 
+# faz-se a comparaçao entre a relaçao massa da entrega tempo camiao e a relacao dos valores iniciais para obter o armazem */
 
 entregaMelhorRelacao(_,[],_, -10000000,_):-!.
 entregaMelhorRelacao(Origem,[A1|Armazens], Data, MelhorRelacao, Armazem):-entregaMelhorRelacao(Origem, Armazens,Data,MelhorRelacao1,Armazem1),
@@ -410,8 +415,8 @@ entregaMelhorRelacao(Origem,[A1|Armazens], Data, MelhorRelacao, Armazem):-entreg
                                                            (((Massa/Tempo)>MelhorRelacao1,!, MelhorRelacao is (Massa/Tempo), Armazem = A1);MelhorRelacao is MelhorRelacao1, Armazem = Armazem1),!.
 
 
-# recebe a data, o armazem/cidade origem, lista de armazens e retorna a lista com os troços entre os armazens mais proximos
-#a partir do armazem/cidade origem , da lista e da data vai buscar a entrega com maior massa para esse armazem, de seguida apaga esse ja visto da lista dos armazens e manda a data e os armazens seguintes para o bfs
+/*# recebe a data, o armazem,cidade origem, lista de armazens e retorna a lista com os troços entre os armazens mais proximos
+#a partir do armazem,cidade origem , da lista e da data vai buscar a entrega com maior massa para esse armazem, de seguida apaga esse ja visto da lista dos armazens e manda a data e os armazens seguintes para o bfs*/
 
 bfsMelhorRelacao(_,_,[],[]):-!.
 bfsMelhorRelacao(Data,Origem,[A|RestantesArmazens],[ArmazemSeguinte|Viagem]):-entregaMelhorRelacao(Origem,[A|RestantesArmazens],Data,_,ArmazemSeguinte),
@@ -419,9 +424,9 @@ bfsMelhorRelacao(Data,Origem,[A|RestantesArmazens],[ArmazemSeguinte|Viagem]):-en
                                                                               bfsMelhorRelacao(Data, ArmazemSeguinte, ArmazensEmFalta,Viagem).
 
 
-#tendo em conta a data, o camiao, a lista dos troços de armazens(as viagens) e o tempo, obter a melhor viagem com a melhor relacao tempo e massa
+/*#tendo em conta a data, o camiao, a lista dos troços de armazens(as viagens) e o tempo, obter a melhor viagem com a melhor relacao tempo e massa
 # vai entao começar por arranjar todos os armazens (onde devam ser feitas entregas naquela data), numa lista, de seguida vai buscar a cidade/armazem origem e vai mandar a origem, a lista e a data para o bfs e vai obter a lista de viagens 
-# finalmente a partir da data , camiao e viagens, vai determinar os tempos para poder comparar e descobrir o melhor
+# finalmente a partir da data , camiao e viagens, vai determinar os tempos para poder comparar e descobrir o melhor*/
 
 melhorViagemMelhorRelacao(Data, Camiao, Viagem, Tempo):-armazensViagem(ArmazensVisitar,Data),
                                                         cidadeArmazem(Origem),
