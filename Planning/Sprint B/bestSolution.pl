@@ -294,12 +294,12 @@ dadosCam_t_e_ta(eTruck01,17,16,67,25,0).
 
 
 /*deliveries
-delivery(<idEntrega>,<data>,<massaEntrefa>,<armazemEntrega>,<tempoColoc>,<tempoRet>)*/
-delivery(4439, 20221205, 200, 1, 8, 10).
-delivery(4438, 20221205, 150, 9, 7, 9).
-delivery(4445, 20221205, 100, 3, 5, 7).
-delivery(4443, 20221205, 120, 8, 6, 8).
-delivery(4449, 20221205, 300, 11, 15, 20).
+entrega(<idEntrega>,<data>,<massaEntrefa>,<armazemEntrega>,<tempoColoc>,<tempoRet>)*/
+entrega(4439, 20221205, 200, 1, 8, 10).
+entrega(4438, 20221205, 150, 9, 7, 9).
+entrega(4445, 20221205, 100, 3, 5, 7).
+entrega(4443, 20221205, 120, 8, 6, 8).
+entrega(4449, 20221205, 300, 11, 15, 20).
 
 
 
@@ -327,30 +327,86 @@ idArmazem('Vila Nova de Gaia',17).
 /*cidadeArmazem(<id>).*/
 cidadeArmazem(5).
 
-/*
-Recebendo os dados das entregas a fazer por 1 camião e dos troços entre armazéns: 
-gerar todas as trajetórias possíveis através de sequências de armazéns onde deverão ser feitas as entregas
+
+/* 
+Avaliar essas trajetórias de acordo com o tempo para completar todas as entregas e 
+voltar ao armazém base de Matosinhos e escolher a solução que permite a volta com o camião mais cedo 
 */
 
-/* Todos os armazens, que guarda numa lista (L) que procura (findall) pelo WId do armazém correspondente nas entregas
-a fazer numa determinada data */
-warehouseRoute(L,Date):-findall(WId, delivery(_,Date,_,WId,_,_),L). 
+/* Numa dada data, com uma lista de armazéns guardada em LW e uma lista de Loads LL e Load do camião atual
+Com isto vai buscar as entregas todas para essa dada data e vai usar as suas massas para fazer o cálculo da Load  */
+getLoadTruck(_, [], [], 0):-!.
+getLoadTruck(Date, [Warehouse|LW], [Load|LL], Load):-getLoadTruck(Date, LW, LL, LoadAux), entrega(_,Date,Mass,Warehouse,_,_), 
+                                                        Load is Mass + LoadAux.
 
-/* Juntar o armazém de Matosinhos sempre como armazém inicial e final */
-addMainWarehouse(IW, FW):-cidadeArmazem(WId), append([WId|IW],[WId],FW).
+/* Para um dado camião, vai buscar a sua tara para posteriormente fazer a soma da tara  */
+addTareTruck(TruckName, LL, LLT):- carateristicasCam(TruckName,Tare,_,_,_,_), addTare(Tare,LL,LLT).
 
-/* As trajetórias possiveis, com permutação de uma lista de routes */
-routes(LR,Date):- warehouseRoute(LW,Date), findall(Route, permutation(LW, Route), LR).
+/* LLT: composta pela Load + tara */
+addTare(Tare,[],[Tare]):-!.
+addTare(Tare, [Load|LL], [LoadTara|LLT]):- addTare(Tare,LL,LLT), LoadTara is Load + Tare.
 
-/* Route tendo em conta os troços e com Matosinhos que adiciona no inicio e no final */
-fullRoute([],[]).
-fullRoute([V|LR], [R|FW]):- addMainWarehouse(V, R),write(R),nl, fullRoute(LR, FW).
+/* Consoante os dados dos camioes, a sua capacidade total corresponde a tara e a capacidade de Load*/
+getCapacityWLoadAndTare(Truck,Capacity):-carateristicasCam(Truck,Tare,CapacityLoad,_,_,_), 
+                                                Capacity is Tare + CapacityLoad.
 
-/* Todas as routes possíveis para uma certa data, tendo em conta o armazém de Matosinhos*/
-finalRoute(FW,Date):-routes(LR,Date), fullRoute(LR, FW).
+/* O tempo necessário para concluir as viagens entre troços de armazéns que tem de fazer, para isso terá que saber a Load que o Truck
+transporta, saber a sua tara, o peso total do Truck já cheio, ter em conta também a bateria com que se encontra e quanto demora para 
+a carregar, para no final, calcular o tempo da viagem total  */
+determineTime(Date, Truck, LW, Time):- getLoadTruck(Date, LW, LL,_), addTareTruck(Truck,LL, LLT),
+                                           cidadeArmazem(Id), append([Id|LW],[Id],Routes),
+                                           getCapacityWLoadAndTare(Truck,Capacity),
+                                           carateristicasCam(Truck,_,_,BatteryLoad,_,ChargingTime),
+                                           routeTime(Routes, LLT,Capacity,BatteryLoad,BatteryLoad,ChargingTime,Date,Time),!.
 
+/* Dado um troço entres 2 armazéns e a Load com que parte do armazém e a sua bateria, para um dado camião calcula-se a energia gasta nesse trajeto, o tempo que é necessário
+que se calcula através do tempo máximo que nos é dada a partir da base de conhecimentos*Load com que sai do armazém pela sua capacidade */
+routeTime([W1,W2],[Load1],Capacity, BatteryLoad,MaxLoad,_, _, Time):-dadosCam_t_e_ta(_, W1, W2, RouteMaxTime, MaxWastedEnergy, ExtraTime),
+                                                            RouteTime is RouteMaxTime*Load1/Capacity,
+                                                            RouteEnergy is MaxWastedEnergy*Load1/Capacity,
+                                                            BatteriesEnergy is BatteryLoad - RouteEnergy,
+                                                            ((BatteriesEnergy<(MaxLoad*0.2), ExtraTimeNeeded is ExtraTime,!);(ExtraTimeNeeded is 0)),
+                                                            Time is RouteTime + ExtraTimeNeeded.
 
+/* Depois de descarregar uma primeira vez as entregas, calcular com que capacidade ainda fica, a bateria que lhe resta e ver se é suficiente para prosseguir até à próxima paragem
+(armazém), se não terá que carregar a bateria
+É preciso ter em conta o tempo que se leva a descarregar o camião (tirar as encomendas)
+Time1 vai ser o tempo da viagem entre o ultimo troço de armazéns */
+routeTime([W1,W2,W3|Routes], [Load1,Load2|LLT],Capacity, BatteryLoad,MaxLoad,ChargingTime, Date, Time):-dadosCam_t_e_ta(_, W1, W2, RouteMaxTime, MaxWastedEnergy, ExtraTime),
+                    RouteTime is RouteMaxTime*Load1/Capacity, RouteEnergy is MaxWastedEnergy*Load1/Capacity,
+                    BatteriesEnergy is BatteryLoad - RouteEnergy,
+                    ((BatteriesEnergy<(MaxLoad*0.2),BatteryEnergyArrivalWarehouse is (MaxLoad*0.2), 
+                    ExtraTimeNeeded is ExtraTime,!);(BatteryEnergyArrivalWarehouse is BatteriesEnergy, ExtraTimeNeeded is 0)), 
+                    entrega(_,Date,_,W2,_,DischaringTime),
+                    dadosCam_t_e_ta(_, W2, W3, _,NextMaxWastedEnergy,_), 
+                    NextNecessaryEnergy is NextMaxWastedEnergy * Load2 / Capacity,
+                    cidadeArmazem(Matosinhos), ((W3 == Matosinhos, BatteryEnergyArrivalWarehouse - NextNecessaryEnergy < (MaxLoad*0.2), 
+                    ChargingQuantity is ((MaxLoad*0.2) - (BatteryEnergyArrivalWarehouse - NextNecessaryEnergy) ), 
+                    TimeCharging is ChargingQuantity*ChargingTime/(MaxLoad*0.6),
+                    NextBatteryLoad is ChargingQuantity+BatteryEnergyArrivalWarehouse,!);
+                    (((NextNecessaryEnergy>BatteryEnergyArrivalWarehouse,NextBatteryLoad is (MaxLoad*0.8),
+                    TimeCharging is ((MaxLoad*0.8) - BatteryEnergyArrivalWarehouse)*ChargingTime/(MaxLoad*0.6),!);
+                    ((BatteryEnergyArrivalWarehouse-NextNecessaryEnergy<(MaxLoad*0.2),
+                    NextBatteryLoad is (MaxLoad*0.8), TimeCharging is ((MaxLoad*0.8) - BatteryEnergyArrivalWarehouse)*ChargingTime/(MaxLoad*0.6),!);
+                    (NextBatteryLoad is BatteriesEnergy, TimeCharging is 0))))),
+                    ((TimeCharging>DischaringTime, WaitingTime is TimeCharging,!);( WaitingTime is DischaringTime)),
+                    routeTime([W2,W3|Routes],[Load2|LLT], Capacity, NextBatteryLoad, MaxLoad ,ChargingTime, Date, Time1),
+                    Time is Time1 + RouteTime + ExtraTimeNeeded + WaitingTime.
 
+/* A melhor viagem considerando o menor tempo*/
+bestRoute(L,Time,Date,Truck):- get_time(Ti),
+                                    (run(Date, Truck);true),lessTime(L,Time),
+                                    get_time(Tf), TResult is Tf-Ti,
+                                    write(TResult),nl.
 
+/* retractall: Remove */
+run(Date, Truck):- retractall(lessTime(_,_)), assertz(lessTime(_,1000000)),
+        findall(Id, entrega(_,Date,_,Id,_,_),LF), permutation(LF,FLPerm),
+        determineTime(Date,Truck,FLPerm,Time), update(FLPerm,Time),
+        fail.
 
+/* update o tempo para o menor tempo possivel */
+update(FLPerm,Time):-
+        lessTime(_,MinimumTime),((Time<MinimumTime,!,retract(lessTime(_,_)),
+        assertz(lessTime(FLPerm,Time)));true).
 
