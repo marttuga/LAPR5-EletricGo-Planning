@@ -294,12 +294,12 @@ dadosCam_t_e_ta(eTruck01,17,16,67,25,0).
 
 
 /*deliveries
-entrega(<idEntrega>,<data>,<massaEntrefa>,<armazemEntrega>,<tempoColoc>,<tempoRet>)*/
-entrega(4439, 20221205, 200, 1, 8, 10).
-entrega(4438, 20221205, 150, 9, 7, 9).
-entrega(4445, 20221205, 100, 3, 5, 7).
-entrega(4443, 20221205, 120, 8, 6, 8).
-entrega(4449, 20221205, 300, 11, 15, 20).
+delivery(<idEntrega>,<data>,<massaEntrefa>,<armazemEntrega>,<tempoColoc>,<tempoRet>)*/
+delivery(4439, 20221205, 200, 1, 8, 10).
+delivery(4438, 20221205, 150, 9, 7, 9).
+delivery(4445, 20221205, 100, 3, 5, 7).
+delivery(4443, 20221205, 120, 8, 6, 8).
+delivery(4449, 20221205, 300, 11, 15, 20).
 
 
 
@@ -332,22 +332,22 @@ Recebendo os dados das entregas a fazer por 1 camião e dos troços entre armaz�
 gerar todas as trajetórias possíveis através de sequências de armazéns onde deverão ser feitas as entregas
 */
 
-/* Todos os armazens, que guarda numa lista (L) que procura (findall) pelo Id do armazém correspondente nas entregas
+/* Todos os armazens, que guarda numa lista (L) que procura (findall) pelo WId do armazém correspondente nas entregas
 a fazer numa determinada data */
-armazensViagem(L,Data):-findall(Id, entrega(_,Data,_,Id,_,_),L). 
+warehouseRoute(L,Date):-findall(WId, delivery(_,Date,_,WId,_,_),L). 
 
 /* Juntar o armazém de Matosinhos sempre como armazém inicial e final */
-adicionarMatosinhos(WI, WF):-cidadeArmazem(Id), append([Id|WI],[Id],WF).
+addMainWarehouse(IW, FW):-cidadeArmazem(WId), append([WId|IW],[WId],FW).
 
-/* As trajetórias possiveis, com permutação de uma lista de viagens */
-viagens(LV,Data):- armazensViagem(LW,Data), findall(Viagem, permutation(LW, Viagem), LV).
+/* As trajetórias possiveis, com permutação de uma lista de routes */
+routes(LR,Date):- warehouseRoute(LW,Date), findall(Route, permutation(LW, Route), LR).
 
-/* Viagem tendo em conta os troços e com Matosinhos que adiciona no inicio e no final */
-viagensCompleta([],[]).
-viagensCompleta([V|LV], [R|WF]):- adicionarMatosinhos(V, R),write(R),nl, viagensCompleta(LV, WF).
+/* Route tendo em conta os troços e com Matosinhos que adiciona no inicio e no final */
+fullRoute([],[]).
+fullRoute([V|LR], [R|FW]):- addMainWarehouse(V, R),write(R),nl, fullRoute(LR, FW).
 
-/* Todas as viagens possíveis para uma certa data, tendo em conta o armazém de Matosinhos*/
-viagensFinal(WF,Data):-viagens(LV,Data), viagensCompleta(LV, WF).
+/* Todas as routes possíveis para uma certa data, tendo em conta o armazém de Matosinhos*/
+finalRoute(FW,Date):-routes(LR,Date), fullRoute(LR, FW).
 
 
 
