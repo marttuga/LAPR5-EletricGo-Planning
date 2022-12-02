@@ -342,7 +342,7 @@ getLoadTruck(Date, [Warehouse|LW], [Load|LL], Load):-getLoadTruck(Date, LW, LL, 
 /* Para um dado camião, vai buscar a sua tara para posteriormente fazer a soma da tara  */
 addTareTruck(TruckName, LL, LLT):- carateristicasCam(TruckName,Tare,_,_,_,_), addTare(Tare,LL,LLT).
 
-/* LLT: composta pela Load + tara */
+/* LLT: composta pela Load(carga do camião) + tara */
 addTare(Tare,[],[Tare]):-!.
 addTare(Tare, [Load|LL], [LoadTara|LLT]):- addTare(Tare,LL,LLT), LoadTara is Load + Tare.
 
@@ -359,7 +359,7 @@ determineTime(Date, Truck, LW, Time):- getLoadTruck(Date, LW, LL,_), addTareTruc
                                            carateristicasCam(Truck,_,_,BatteryLoad,_,ChargingTime),
                                            routeTime(Routes, LLT,Capacity,BatteryLoad,BatteryLoad,ChargingTime,Date,Time),!.
 
-/* Dado um troço entres 2 armazéns e a Load com que parte do armazém e a sua bateria, para um dado camião calcula-se a energia gasta nesse trajeto, o tempo que é necessário
+/* Dado um troço entres 2 armazéns e a Load(carga) com que parte do armazém e a sua bateria, para um dado camião calcula-se a energia gasta nesse trajeto, o tempo que é necessário
 que se calcula através do tempo máximo que nos é dada a partir da base de conhecimentos*Load com que sai do armazém pela sua capacidade */
 routeTime([W1,W2],[Load1],Capacity, BatteryLoad,MaxLoad,_, _, Time):-dadosCam_t_e_ta(_, W1, W2, RouteMaxTime, MaxWastedEnergy, ExtraTime),
                                                             RouteTime is RouteMaxTime*Load1/Capacity,
@@ -371,33 +371,37 @@ routeTime([W1,W2],[Load1],Capacity, BatteryLoad,MaxLoad,_, _, Time):-dadosCam_t_
 /* Depois de descarregar uma primeira vez as entregas, calcular com que capacidade ainda fica, a bateria que lhe resta e ver se é suficiente para prosseguir até à próxima paragem
 (armazém), se não terá que carregar a bateria
 É preciso ter em conta o tempo que se leva a descarregar o camião (tirar as encomendas)
-Time1 vai ser o tempo da viagem entre o ultimo troço de armazéns */
+Time1 vai ser o tempo da viagem entre o ultimo troço de armazéns 
+Começa por pesquisar na base de conhecimento a cidade de onde parte e o seu primeiro destino de entrega*/
 routeTime([W1,W2,W3|Routes], [Load1,Load2|LLT],Capacity, BatteryLoad,MaxLoad,ChargingTime, Date, Time):-dadosCam_t_e_ta(_, W1, W2, RouteMaxTime, MaxWastedEnergy, ExtraTime),
-                    RouteTime is RouteMaxTime*Load1/Capacity, RouteEnergy is MaxWastedEnergy*Load1/Capacity,
-                    BatteriesEnergy is BatteryLoad - RouteEnergy,
-                    ((BatteriesEnergy<(MaxLoad*0.2),BatteryEnergyArrivalWarehouse is (MaxLoad*0.2), 
-                    ExtraTimeNeeded is ExtraTime,!);(BatteryEnergyArrivalWarehouse is BatteriesEnergy, ExtraTimeNeeded is 0)), 
-                    entrega(_,Date,_,W2,_,DischaringTime),
-                    dadosCam_t_e_ta(_, W2, W3, _,NextMaxWastedEnergy,_), 
-                    NextNecessaryEnergy is NextMaxWastedEnergy * Load2 / Capacity,
-                    cidadeArmazem(Matosinhos), ((W3 == Matosinhos, BatteryEnergyArrivalWarehouse - NextNecessaryEnergy < (MaxLoad*0.2), 
-                    ChargingQuantity is ((MaxLoad*0.2) - (BatteryEnergyArrivalWarehouse - NextNecessaryEnergy) ), 
-                    TimeCharging is ChargingQuantity*ChargingTime/(MaxLoad*0.6),
-                    NextBatteryLoad is ChargingQuantity+BatteryEnergyArrivalWarehouse,!);
-                    (((NextNecessaryEnergy>BatteryEnergyArrivalWarehouse,NextBatteryLoad is (MaxLoad*0.8),
-                    TimeCharging is ((MaxLoad*0.8) - BatteryEnergyArrivalWarehouse)*ChargingTime/(MaxLoad*0.6),!);
-                    ((BatteryEnergyArrivalWarehouse-NextNecessaryEnergy<(MaxLoad*0.2),
-                    NextBatteryLoad is (MaxLoad*0.8), TimeCharging is ((MaxLoad*0.8) - BatteryEnergyArrivalWarehouse)*ChargingTime/(MaxLoad*0.6),!);
-                    (NextBatteryLoad is BatteriesEnergy, TimeCharging is 0))))),
-                    ((TimeCharging>DischaringTime, WaitingTime is TimeCharging,!);( WaitingTime is DischaringTime)),
-                    routeTime([W2,W3|Routes],[Load2|LLT], Capacity, NextBatteryLoad, MaxLoad ,ChargingTime, Date, Time1),
-                    Time is Time1 + RouteTime + ExtraTimeNeeded + WaitingTime.
-
-/* A melhor viagem considerando o menor tempo*/
-bestRoute(L,Time,Date,Truck):- get_time(Ti),
-                                    (run(Date, Truck);true),lessTime(L,Time),
-                                    get_time(Tf), TResult is Tf-Ti,
-                                    write(TResult),nl.
+                RouteTime is RouteMaxTime * Load1/Capacity,
+                RouteEnergy is MaxWastedEnergy*Load1/Capacity,
+                BatteriesEnergy is BatteryLoad - RouteEnergy,
+        /* se a bateria no momento for inferior aos 20% (bateria minima), então a bateria com que chega terá de ser a minima */
+                ((BatteriesEnergy<(MaxLoad*0.2),BatteryEnergyArrivalWarehouse is (MaxLoad*0.2), 
+                ExtraTimeNeeded is ExtraTime,!);(BatteryEnergyArrivalWarehouse is BatteriesEnergy, ExtraTimeNeeded is 0)),
+        /* todas as entregas para o armazém de destino e o tempo necessário de descarga  */ 
+                entrega(_,Date,_,W2,_,DischaringTime),
+                dadosCam_t_e_ta(_, W2, W3, _,NextMaxWastedEnergy,_), 
+                NextNecessaryEnergy is NextMaxWastedEnergy * Load2 / Capacity,
+                cidadeArmazem(Matosinhos),((W3 == Matosinhos, BatteryEnergyArrivalWarehouse - NextNecessaryEnergy < (MaxLoad*0.2), 
+        /* a quantidade a ser carregada é a garantia dos 20% da bateria quando chega tirando a bateria com que chega ao armazém
+        e a energia necessária ao próximo troço */
+                ChargingQuantity is ((MaxLoad*0.2) - (BatteryEnergyArrivalWarehouse - NextNecessaryEnergy) ), 
+        /* o tempo de carregamento é proporcional à quantidade de bateria que carrega pela duração do carregamento, a dividir
+        pela carga máxima pela diferença dos 20% para os 80% */
+                TimeCharging is ChargingQuantity*ChargingTime/(MaxLoad*0.6),
+                NextBatteryLoad is ChargingQuantity + BatteryEnergyArrivalWarehouse,!);
+                (((NextNecessaryEnergy > BatteryEnergyArrivalWarehouse,NextBatteryLoad is (MaxLoad*0.8),
+                TimeCharging is ((MaxLoad*0.8) - BatteryEnergyArrivalWarehouse)*ChargingTime/(MaxLoad*0.6),!);
+                ((BatteryEnergyArrivalWarehouse-NextNecessaryEnergy<(MaxLoad*0.2),
+                NextBatteryLoad is (MaxLoad*0.8), TimeCharging is ((MaxLoad*0.8) - BatteryEnergyArrivalWarehouse)*ChargingTime/(MaxLoad*0.6),!);
+                (NextBatteryLoad is BatteriesEnergy, TimeCharging is 0))))),
+        /* Caso o tempo de carregamento for superior ao tempo de descarga da encomenda, o tempo de espera vai ser o maior tempo
+        (de carregamento), se não é o tempo de descarga */
+                ((TimeCharging>DischaringTime, WaitingTime is TimeCharging,!);( WaitingTime is DischaringTime)),
+                routeTime([W2,W3|Routes],[Load2|LLT], Capacity, NextBatteryLoad, MaxLoad ,ChargingTime, Date, Time1),
+                Time is Time1 + RouteTime + ExtraTimeNeeded + WaitingTime.
 
 /* retractall: Remove */
 run(Date, Truck):- retractall(lessTime(_,_)), assertz(lessTime(_,1000000)),
@@ -405,8 +409,14 @@ run(Date, Truck):- retractall(lessTime(_,_)), assertz(lessTime(_,1000000)),
         determineTime(Date,Truck,FLPerm,Time), update(FLPerm,Time),
         fail.
 
-/* update o tempo para o menor tempo possivel */
+/* update o tempo para o menor tempo possivel com as várias listas de viagens com os variados armazéns */
 update(FLPerm,Time):-
         lessTime(_,MinimumTime),((Time<MinimumTime,!,retract(lessTime(_,_)),
         assertz(lessTime(FLPerm,Time)));true).
+
+/* A melhor viagem considerando o menor tempo*/
+bestRoute(L,Time,Date,Truck):- get_time(Ti),
+                                    (run(Date, Truck);true),lessTime(L,Time),
+                                    get_time(Tf), TResult is Tf-Ti,
+                                    write(TResult),nl.
 
