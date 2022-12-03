@@ -16,9 +16,9 @@
 % Servidor
 
 
-startServer(Port) :-
-    http_server(http_dispatch, [port(Port)]),
-    asserta(port(Port)).
+startServer:-
+    http_server(http_dispatch, [port(64172)]),
+    asserta(port(64172)).
 
 stopServer:-
     retract(port(Port)),
