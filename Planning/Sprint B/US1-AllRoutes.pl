@@ -324,30 +324,36 @@ idArmazem('Vila do Conde',16).
 idArmazem('Vila Nova de Gaia',17).
 
 
-/*cidadeArmazem(<id>).*/
-cidadeArmazem(5).
 
 /*
 Recebendo os dados das entregas a fazer por 1 camião e dos troços entre armazéns: 
 gerar todas as trajetórias possíveis através de sequências de armazéns onde deverão ser feitas as entregas
 */
 
-/* Todos os armazens, que guarda numa lista (L) que procura (findall) pelo WId do armazém correspondente nas entregas
-a fazer numa determinada data */
-warehouseRoute(L,Date):-findall(WId, delivery(_,Date,_,WId,_,_),L). 
+/* Começamos por procurar todos os armazens cujas deliveries foram feitas na data especificada
+L - Lista de armazéns
+WId - ID do armazém
+*/
+warehouseRoute(Date,L):-findall(WId, delivery(_,Date,_,WId,_,_),L). 
 
-/* Juntar o armazém de Matosinhos sempre como armazém inicial e final */
-addMainWarehouse(IW, FW):-cidadeArmazem(WId), append([WId|IW],[WId],FW).
+/* Retorna todas as permutações possíveis entre os armazéns cujas entregas se realizam nessa data 
+LR - Lista de rotas
+LW - Lista de armazéns
+*/
+routes(Date,LR):- warehouseRoute(Date,LW), findall(Route, permutation(LW, Route), LR).
 
-/* As trajetórias possiveis, com permutação de uma lista de routes */
-routes(LR,Date):- warehouseRoute(LW,Date), findall(Route, permutation(LW, Route), LR).
-
-/* Route tendo em conta os troços e com Matosinhos que adiciona no inicio e no final */
+/* Retorna todas a permutações possiveis mas começando e acabando em Matosinhos 
+V - Primeira rota da lista de rotas
+R - Primeira rota completa
+*/
 fullRoute([],[]).
-fullRoute([V|LR], [R|FW]):- addMainWarehouse(V, R),write(R),nl, fullRoute(LR, FW).
+fullRoute([V|LR], [R|FW]):- idArmazem('Matosinhos',WId), append([WId|V],[WId],R), fullRoute(LR, FW).
 
-/* Todas as routes possíveis para uma certa data, tendo em conta o armazém de Matosinhos*/
-finalRoute(FW,Date):-routes(LR,Date), fullRoute(LR, FW).
+/* Retorna a lista final com todas as routes possíveis
+FWL- Lista final de armazéns
+LR- List de rotas
+*/
+finalRoute(Date,FWL):-routes(Date,LR), fullRoute(LR, FWL),write(FWL).
 
 
 
