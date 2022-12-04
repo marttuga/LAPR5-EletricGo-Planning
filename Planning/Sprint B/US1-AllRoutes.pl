@@ -1,5 +1,11 @@
-:-consult('BaseConhecimento.pl').
 
+/* :-consult('BaseConhecimento.pl').*/
+
+:- consult('BCTrucks.pl').
+:- consult('BCDeliveries.pl').
+:- consult('BCDadosTrucks.pl').
+:- consult('BCWarehouses.pl').
+:- consult('BCRoutes.pl').
 
 /*
 Recebendo os dados das entregas a fazer por 1 camião e dos troços entre armazéns: 
@@ -9,6 +15,7 @@ gerar todas as trajetórias possíveis através de sequências de armazéns onde
 /* Começamos por procurar todos os armazens cujas deliveries foram feitas na data especificada
 L - Lista de armazéns
 WId - ID do armazém
+findall é O(n)
 */
 warehouseRoute(Date,L):-findall(WId, entrega(_,Date,_,WId,_,_),L). 
 
