@@ -6,11 +6,11 @@
 :- use_module(library(http/json)).
 
 url('http://localhost:5000').
-url_users('/api/user/getAllProlog').
+url_users('/api/warehouse/getAllProlog').
 
 
 
-get_users(FileName):-
+get_warehouses(FileName):-
     format('File Name: '),
     format(FileName),
     format('~n~n'),
