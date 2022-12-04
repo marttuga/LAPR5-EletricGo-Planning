@@ -330,16 +330,18 @@ Avaliar essas trajetórias de acordo com o tempo para completar todas as entreg
 voltar ao armazém base de Matosinhos e escolher a solução que permite a volta com o camião mais cedo 
 */
 
-/* Numa dada data, com uma lista de armazéns guardada em LW e uma lista de Loads LL e Load do camião atual
-Com isto vai buscar as entregas todas para essa dada data e vai usar as suas massas para fazer o cálculo da Load  */
+/* Numa dada data, com uma lista de armazéns guardada em LW e uma lista de Loads(cargas) LL e Load(carga) do camião atual
+Com isto vai buscar as entregas todas para essa dada data e vai usar as suas massas para fazer o cálculo da Load, que vai ser 
+a soma das massas das entregas com a LoadAux  */
 getLoadTruck(_, [], [], 0):-!.
 getLoadTruck(Date, [Warehouse|LW], [Load|LL], Load):-getLoadTruck(Date, LW, LL, LoadAux), entrega(_,Date,Mass,Warehouse,_,_), 
                                                         Load is Mass + LoadAux.
 
-/* Para um dado camião, vai buscar a sua tara para posteriormente fazer a soma da tara  */
+/* Para um dado camião, através do seu nome, vai buscar a sua tara para posteriormente fazer a soma da tara  */
 addTareTruck(TruckName, LL, LLT):- carateristicasCam(TruckName,Tare,_,_,_,_), addTare(Tare,LL,LLT).
 
-/* LLT: composta pela Load(carga do camião) + tara */
+/* dada a tara de um camião (Tare), uma lista de cargas (LL) e uma lista composta pelas somas da tara e da carga
+LLT: composta pela Load(carga do camião) + tara */
 addTare(Tare,[],[Tare]):-!.
 addTare(Tare, [Load|LL], [LoadTara|LLT]):- addTare(Tare,LL,LLT), LoadTara is Load + Tare.
 
