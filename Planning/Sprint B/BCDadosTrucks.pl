@@ -1,7 +1,3 @@
-/*factos_camiao
-carateristicasCam(<nome_camiao>,<tara>,<capacidade_carga>,<carga_total_baterias>,<autonomia>,<t_recarr_bat_20a80>).*/
-carateristicasCam(eTruck01,7500,4300,80,100,60).
-
 /*dadosCam_t_e_ta(<nome_camiao>,<cidade_origem>,<cidade_destino>,<tempo>,<energia>,<tempo_adicional>).*/
 dadosCam_t_e_ta(eTruck01,1,2,122,42,0).
 dadosCam_t_e_ta(eTruck01,1,3,122,46,0).
@@ -291,35 +287,3 @@ dadosCam_t_e_ta(eTruck01,17,13,82,23,0).
 dadosCam_t_e_ta(eTruck01,17,14,90,38,0).
 dadosCam_t_e_ta(eTruck01,17,15,53,18,0).
 dadosCam_t_e_ta(eTruck01,17,16,67,25,0). 
-
-
-/*deliveries
-entrega(<idEntrega>,<data>,<massaEntrefa>,<armazemEntrega>,<tempoColoc>,<tempoRet>)*/
-entrega(4439, 20221205, 200, 1, 8, 10).
-entrega(4438, 20221205, 150, 9, 7, 9).
-entrega(4445, 20221205, 100, 3, 5, 7).
-entrega(4443, 20221205, 120, 8, 6, 8).
-entrega(4449, 20221205, 300, 11, 15, 20).
-
-
-
-/*id_warehouse
-idArmazem(<local>,<codigo>)*/
-idArmazem('Arouca',1).
-idArmazem('Espinho',2).
-idArmazem('Gondomar',3).
-idArmazem('Maia',4).
-idArmazem('Matosinhos',5).
-idArmazem('Oliveira de Azemeis',6).
-idArmazem('Paredes',7).
-idArmazem('Porto',8).
-idArmazem('Povoa de Varzim',9).
-idArmazem('Santa Maria da Feira',10).
-idArmazem('Santo Tirso',11).
-idArmazem('Sao Joao da Madeira',12).
-idArmazem('Trofa',13).
-idArmazem('Vale de Cambra',14).
-idArmazem('Valongo',15).
-idArmazem('Vila do Conde',16).
-idArmazem('Vila Nova de Gaia',17).
-
