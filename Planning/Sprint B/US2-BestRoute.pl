@@ -135,5 +135,5 @@ update(FLPerm,Time):-
 bestRoute(Date,Truck,L,Time):- get_time(Ti),
                                 (run(Date, Truck);true),lessTime(L,Time),
                                 get_time(Tf), TResult is Tf-Ti,
-                                write(TResult),nl.
+                                write(TResult),nl, format('Fastest run Time rounded: ~3f~n', [TResult]),format('Fastest route Time rounded: ~3f~n', [Time]).
 
