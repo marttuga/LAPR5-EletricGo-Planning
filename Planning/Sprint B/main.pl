@@ -8,6 +8,7 @@
 :- ensure_loaded('BCWarehouses.pl').
 :- ensure_loaded('BCRoutes.pl').
 
-
+:- ensure_loaded('US1-AllRoutes.pl').
+:- ensure_loaded('US2-BestRoute.pl').
 
 :- ensure_loaded('algorithms').
