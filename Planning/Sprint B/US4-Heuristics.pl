@@ -13,6 +13,8 @@
  
 /*US 4*/
 
+
+
 deleteWarehouseVisited([W|RemainingWarehouses],NextWarehouse,MissingWarehouses):- delete([W|RemainingWarehouses],NextWarehouse,MissingWarehouses).
 
 /*HEURISTICA 1- MAIS PROXIMO TEMPO OU DISTANCIA
@@ -20,9 +22,9 @@ deleteWarehouseVisited([W|RemainingWarehouses],NextWarehouse,MissingWarehouses):
 #retorna o armazem mais proximo. Recebe o armazem de origem, a lista de todos os armazens e o tempo. Vai entao procurar o camiao que tem o mesmo armazem de origem, o de destino e o mesmo tempo.
 #calcula o menor tempo entre os armazens, relativamente ao de origem e o que tiver menor fica o armazem escolhido mais proximo*/
 
-nearestWarehouse(_, [], 0,_):-!.
+nearestWarehouse(_, [], 10000,_):-!.
 nearestWarehouse(Departure,[W1|Warehouses],LessTime,Warehouse):-nearestWarehouse(Departure,Warehouses,LessTime1,Warehouse1), dadosCam_t_e_ta(_,Departure,W1,Time,_,_),
-                                                        ((Time<LessTime1,!, LessTime is Time, Warehouse = W1);LessTime is LessTime1, Warehouse = Warehouse1).
+                                                        ((Time<LessTime1,!, LessTime is Time, Warehouse = W1);LessTime is LessTime1, Warehouse = Warehouse1),!.
 
 
 
@@ -34,7 +36,7 @@ nearestWarehouse(Departure,[W1|Warehouses],LessTime,Warehouse):-nearestWarehouse
 
 bfsNearestWarehouse(_,[],[]):-!.
 bfsNearestWarehouse(Departure,[W|RemainingWarehouses],[NextWarehouse|Route]):-nearestWarehouse(Departure,[W|RemainingWarehouses],_,NextWarehouse),deleteWarehouseVisited([W|RemainingWarehouses],
-                                                                                NextWarehouse,MissingWarehouses), bfsNearestWarehouse(NextWarehouse,MissingWarehouses,Route).
+                                                                                NextWarehouse,MissingWarehouses), bfsNearestWarehouse(NextWarehouse,MissingWarehouses,Route) .
 
 
 
