@@ -1,5 +1,5 @@
 /*dadosCam_t_e_ta(<nome_camiao>,<cidade_origem>,<cidade_destino>,<tempo>,<energia>,<tempo_adicional>).*/
-/*dadosCam_t_e_ta('eTruck01',1,2,122,42,0).
+dadosCam_t_e_ta('eTruck01',1,2,122,42,0).
 dadosCam_t_e_ta('eTruck01',1,3,122,46,0).
 dadosCam_t_e_ta('eTruck01',1,4,151,54,25).
 dadosCam_t_e_ta('eTruck01',1,5,147,52,25).
@@ -286,8 +286,11 @@ dadosCam_t_e_ta('eTruck01',17,12,80,30,0).
 dadosCam_t_e_ta('eTruck01',17,13,82,23,0).
 dadosCam_t_e_ta('eTruck01',17,14,90,38,0).
 dadosCam_t_e_ta('eTruck01',17,15,53,18,0).
-dadosCam_t_e_ta('eTruck01',17,16,67,25,0).*/
+dadosCam_t_e_ta('eTruck01',17,16,67,25,0).
 
+
+
+/*
 dadosCam_t_e_ta('eTruck01',9,16,15,3,0).
 dadosCam_t_e_ta('eTruck01',16,9,15,3,0).
 dadosCam_t_e_ta('eTruck01',16,13,61,15,0).
@@ -324,3 +327,4 @@ dadosCam_t_e_ta('eTruck01',6,12,23,9,0).
 dadosCam_t_e_ta('eTruck01',12,6,19,8,0).
 dadosCam_t_e_ta('eTruck01',12,2,61,19,0).
 dadosCam_t_e_ta('eTruck01',2,12,61,19,0).
+*/
