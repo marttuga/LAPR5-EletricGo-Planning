@@ -23,16 +23,16 @@ routes(Date,LR):- warehouseRoute(Date,LW), findall(Route, permutation(LW, Route)
 /* Retorna todas a permutações possiveis mas começando e acabando em Matosinhos 
 V - Primeira rota da lista de rotas
 R - Primeira rota completa
-*/
+
 fullRoute([],[]).
 fullRoute([V|LR], [R|FW]):- idArmazem('Matosinhos',WId), append([WId|V],[WId],R), fullRoute(LR, FW).
-
+*/
 /* Retorna a lista final com todas as routes possíveis
 FWL- Lista final de armazéns
 LR- List de rotas
-*/
-finalRoute(Date,FWL):-routes(Date,LR), fullRoute(LR, FWL).
 
+finalRoute(Date,FWL):-routes(Date,LR), fullRoute(LR, FWL).*/
+finalRoute(Date,FWL):-routes(Date,FWL).
 
 
 
