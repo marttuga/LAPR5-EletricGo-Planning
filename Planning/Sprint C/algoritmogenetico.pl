@@ -38,6 +38,7 @@ gera:-  inicializa,
 
 gera_populacao(Pop):- populacao(TamPop),
 	        tarefas(NumT),
+			/*procura as tarefas todas*/
 	        findall(Tarefa,tarefa(Tarefa,_,_,_),ListaTarefas),
 	        gera_populacao(TamPop,ListaTarefas,NumT,Pop).
 
@@ -62,21 +63,33 @@ retira(N,[G1|Resto],G,[G1|Resto1]):-
 	N1 is N-1,
 	retira(N1,Resto,G,Resto1).
 
-avalia_populacao([],[]).
+/*quando chegar a lista vazia para avaliar*/
+avalia_populacao([],[]). 
+/*avalia(Ind,V): para cada individuo, que pode ser solução ou rota, calcula a sua avaliacao*/
 avalia_populacao([Ind|Resto],[Ind*V|Resto1]):- avalia(Ind,V),
 	avalia_populacao(Resto,Resto1).
 
+/*seq: sequencia genética do individuo
+V: a avaliação feita relativa a soma pesada dos atrasos*/
 avalia(Seq,V):- avalia(Seq,0,V).
 
+/*quando chegar ao fim ou a avaliação (V) for 0 ou quando o percurso chegar ao fim*/
 avalia([],_,0).
-avalia([T|Resto],Inst,V):- tarefa(T,Dur,Prazo,Pen),
+
+/*avalia 1 a 1 os individuos 
+Inst: começa a 0
+para cada tarefa*/
+avalia([T|Resto],Inst,V):- tarefa(T,Dur,Prazo,Pen), 
 	InstFim is Inst+Dur,
 	avalia(Resto,InstFim,VResto),
 	(
+		/*InstFim: soma Inst e duração (soma das duracoes) */
 		(InstFim =< Prazo,!, VT is 0)
   ;
 		(VT is (InstFim-Prazo)*Pen)
 	),
+	/*Resto: lista com os restamtes individuos
+	VResto começa em 0 (soma das VT), vai ser só definido depois por ser um resultado de tudo, é uma avaliação*/
 	V is VT+VResto.
 
 ordena_populacao(PopAv,PopAvOrd):- bsort(PopAv,PopAvOrd).
