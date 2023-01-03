@@ -76,6 +76,9 @@ avalia(Seq,V):- avalia(Seq,0,V).
 /*quando chegar ao fim ou a avaliação (V) for 0 ou quando o percurso chegar ao fim*/
 avalia([],_,0).
 
+/*Avlia o tempo para cada individuo*/
+avalia(Seq,Inst,V):- determineTime(_,_,Seq,Tempo), V is Tempo. 
+
 /*avalia 1 a 1 os individuos 
 Inst: começa a 0
 para cada tarefa*/
