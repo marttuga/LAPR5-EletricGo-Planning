@@ -1,3 +1,104 @@
+:- use_module(library(http/json)).
+:- use_module(library(http/json_convert)).
+:- use_module(library(http/http_server)).
+:- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_open)).
+:- use_module(library(http/http_cors)).
+:- use_module(library(http/http_json)).
+:- use_module(library(http/http_client)).
+
+:- set_setting(http:cors, [*]).
+
+:- dynamic idArmazem/2.
+:- dynamic carateristicasCam/6.
+:- dynamic entrega/6.
+
+% Criacao de servidor HTTP no porto 'Port'
+server(Port) :-
+        http_server(http_dispatch, [port(Port)]).
+
+trim(S, T) :-
+  string_codes(S, C), phrase(trimmed(D), C), string_codes(T, D).
+  
+trimmed(S) --> blanks, string(S), blanks, eos, !.
+
+stopServer:-
+    retract(port(Port)),
+    http_stop_server(Port,_).
+
+:- initialization(startServer(64172)).
+
+importarInformacao():-
+    addWarehouses(),
+    addTrucks(),
+    addDeliveries().
+
+addWarehouses():-
+	http_open('https://localhost:5001/api/warehouse', ResultJSON, []),
+	json_read_dict(ResultJSON, ResultObj),
+	warehouseInfo(ResultObj, ResultValue),
+	createWarehouse(ResultValue),
+	close(ResultJSON).
+
+warehouseInfo([],[]).
+warehouseInfo([H|T],[H.id,H.designacaoArmazem.designacao|L]):-
+	warehouseInfo(T, L).
+
+createWarehouse([]).
+createWarehouse([I,D|L]):-
+	assert(idArmazem(I,D)),
+	createWarehouse(L).
+
+deleteWarehouse():-
+    retract(idArmazem(_,_)),
+    fail.
+
+addTrucks():-
+	http_open('http://localhost:3000/api/truck', ResultJSON, []),
+	json_read_dict(ResultJSON, ResultObj),
+	truckInfo(ResultObj, ResultValue),
+	createTruck(ResultValue),
+	close(ResultJSON).
+
+truckInfo([],[]).
+truckInfo([H|T],[Designacao,H.tara,H.capacidadeCarga,H.cargaMaximaBaterias,H.autonomia,H.tempoCarregamentoRapido|L]):-
+	atom_string(H.designacao, X),
+  	atom_string(Designacao, X),
+	truckInfo(T, L).
+
+createTruck([]).
+createTruck([D,T,MC,MB,A,CT|L]):-
+	write(D),nl,
+	assert(carateristicasCam(D,T,MC,MB,A,CT)),
+	createTruck(L).
+
+deleteTruck():-
+    retract(carateristicasCam(_,_,_,_,_,_)),
+    fail.
+
+addDeliveries():-
+	http_open('https://localhost:5001/api/Deliveries', ResultJSON, []),
+	json_read_dict(ResultJSON, ResultObj),
+	deliveryInfo(ResultObj, ResultValue),
+	createDelivery(ResultValue),
+	close(ResultJSON).
+
+deliveryInfo([],[]).
+deliveryInfo([H|T],[(H.identificadorEntrega, DataEntrega, H.massaEntrega.valor, H.armazemID.value, H.tempoCarga.minutos, H.tempoDescarga.minutos)|L]):-
+  atom_number(H.data, X),
+  atom_number(DataEntrega, X),
+  deliveryInfo(T, L).
+
+createDelivery([]).
+createDelivery([(Id,Data,Massa,Armazem,TempoColoc,TempoRet)|L]):-
+	assert(entrega(Id,Data,Massa,Armazem,TempoColoc,TempoRet)),
+	createDelivery(L).
+
+deleteDelivery():-
+    retract(entrega(_,_,_,_,_,_)),
+    fail.
+
+
 :-dynamic geracoes/1.
 :-dynamic populacao/1.
 :-dynamic prob_cruzamento/1.
