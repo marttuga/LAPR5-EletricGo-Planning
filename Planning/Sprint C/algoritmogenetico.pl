@@ -81,6 +81,7 @@ gera:- inicializa,
 	write('Pop='),write(Pop),nl,
 	valida_populacao(Pop,NeededTrucks,DistributionResult,[],PopAtualizada),
 	avalia_populacao(PopAtualizada,PopAv,NeededTrucks,DistributionResult),
+	/*viagens e tempo associado*/
 	write('PopAv='),write(PopAv),nl,
 	ordena_populacao(PopAv,PopOrd),
 	geracoes(NG),
