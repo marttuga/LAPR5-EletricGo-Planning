@@ -62,6 +62,7 @@ deliveries(5).
 
 /*teremos que saber quantidade de novas geracoes, a dimensao de uma populacao,
  probabilidade de mutação e cruzamento para o algoritmo genetico*/
+
 inicializa:-write('Numero de novas Geracoes: '),read(NG),
     (retract(geracoes(_));true), assert(geracoes(NG)),
 	write('Dimensao da Populacao: '),read(DP),
@@ -302,7 +303,11 @@ retirar_elementos_extra([Ind*Tempo*Prob|ListaProdutoRestantesOrd],NP,[Ind*Tempo|
 	retirar_elementos_extra(ListaProdutoRestantesOrd,NP1,ListaEscolhidos).
 
 
-/*_____________*/
+/* geração dos pontos de cruzamento P1 (onde começa o corte) e P2 (onde acaba o corte), 
+por exemplo se P1 for 2 e P2 for 4 os pontos de corte serão entre o 1o e 2o gene e entre 
+o 4o e 5o gene.
+Notar que tal como está implementado não há cortes que fiquem apenas com 1 gene a meio, 
+por causa do P11 ser diferente do P21*/
 gerar_pontos_cruzamento(P1,P2):- gerar_pontos_cruzamento1(P1,P2).
 
 gerar_pontos_cruzamento1(P1,P2):- deliveries(N),
@@ -314,11 +319,13 @@ gerar_pontos_cruzamento1(P1,P2):- deliveries(N),
 
 gerar_pontos_cruzamento1(P1,P2):- gerar_pontos_cruzamento1(P1,P2).
 
-/*________*/
+/*O cruzamento é tentado sobre indivíduos sucessivos 2 a 2 da população, o que pode ser uma limitação*/
 cruzamento([],[]).
 cruzamento([Ind*_],[Ind]).
 cruzamento([Ind1*_,Ind2*_|Resto],[NInd1,NInd2|Resto1]):- gerar_pontos_cruzamento(P1,P2),
 	prob_cruzamento(Pcruz),random(0.0,1.0,Pc),
+	/*Para saber se se realiza o cruzamento gera-se um no aleatório entre 0 e 1 e compara-se com a 
+	probabilidade de cruzamento parametrizada, se for inferior faz-se o cruzamento*/
 	((Pc =< Pcruz,!,
         cruzar(Ind1,Ind2,P1,P2,NInd1),
 	  cruzar(Ind2,Ind1,P1,P2,NInd2))
@@ -326,6 +333,9 @@ cruzamento([Ind1*_,Ind2*_|Resto],[NInd1,NInd2|Resto1]):- gerar_pontos_cruzamento
 	(NInd1=Ind1,NInd2=Ind2)),
 	cruzamento(Resto,Resto1).
 
+
+/*Predicados auxiliares para fazer o cruzamento order crossover, que é o adequado para o 
+sequenciamento de tarefas*/
 preencheh([],[]).
 
 preencheh([_|R1],[h|R2]):- preencheh(R1,R2).
@@ -395,6 +405,8 @@ eliminah([h|R1],R2):-!,
 eliminah([X|R1],[X|R2]):-
 	eliminah(R1,R2).
 
+/*Para saber se se realiza a mutação gera-se um no aleatório entre 0 e 1 e compara-se com a probabilidade
+ de mutação parametrizada, se for inferior faz-se a mutação*/
 mutacao([],[]).
 mutacao([Ind|Rest],[NInd|Rest1]):- prob_mutacao(Pmut),
 	random(0.0,1.0,Pm),
