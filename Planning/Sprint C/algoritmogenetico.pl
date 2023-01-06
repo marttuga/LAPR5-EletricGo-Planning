@@ -302,6 +302,7 @@ retirar_elementos_extra([Ind*Tempo*Prob|ListaProdutoRestantesOrd],NP,[Ind*Tempo|
 	retirar_elementos_extra(ListaProdutoRestantesOrd,NP1,ListaEscolhidos).
 
 
+/*_____________*/
 gerar_pontos_cruzamento(P1,P2):- gerar_pontos_cruzamento1(P1,P2).
 
 gerar_pontos_cruzamento1(P1,P2):- deliveries(N),
@@ -313,7 +314,7 @@ gerar_pontos_cruzamento1(P1,P2):- deliveries(N),
 
 gerar_pontos_cruzamento1(P1,P2):- gerar_pontos_cruzamento1(P1,P2).
 
-
+/*________*/
 cruzamento([],[]).
 cruzamento([Ind*_],[Ind]).
 cruzamento([Ind1*_,Ind2*_|Resto],[NInd1,NInd2|Resto1]):- gerar_pontos_cruzamento(P1,P2),
