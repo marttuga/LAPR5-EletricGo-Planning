@@ -1,403 +1,54 @@
-:- use_module(library(http/json)).
-:- use_module(library(http/json_convert)).
-:- use_module(library(http/http_server)).
-:- use_module(library(http/http_dispatch)).
-:- use_module(library(http/http_open)).
-:- use_module(library(http/http_cors)).
-:- use_module(library(http/http_json)).
-:- use_module(library(http/http_client)).
+% Bibliotecas
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
 :- use_module(library(dcg/basics)).
+:- use_module(library(http/http_cors)).
 
-:- set_setting(http:cors, [*]).
+% Files Injections
+:-include('US1-AllRoutes.pl').
+:-include('US2-BestRoute.pl').
+:-include('US4-Heuristics.pl').
 
+% Rela��o entre pedidos HTTP e predicados que os processam
+:- http_handler('/getAllRoutesOnDate', getAllRoutesOnDate, []).
+:- http_handler('/getBestRoute', getBestRoute, []).
+:- http_handler('/getNearestWarehouse', getNearestWarehouse, []).
+:- http_handler('/getRouteGreaterMass', getRouteGreaterMass, []).
+:- http_handler('/getRouteBestRelation', getRouteBestRelation, []).
+
+% Bibliotecas JSON
+:- use_module(library(http/json_convert)).
+:- use_module(library(http/http_json)).
+:- use_module(library(http/http_cors)).
+:- use_module(library(http/json)).
+
+:- json_object finalRoute(final_route:list(string)).
+:- json_object bestRoute(best_route:list(string)).
+:- json_object bestRouteNearestWarehouse(route_nearest_warehouse:list(string)).
+:- json_object bestRoutePlusMass(route_plus_mass:list(string)).
+:- json_object bestRouteBestRelation(route_best_relation:list(string)).
 
 :- consult('BCTrucks.pl').
-:- consult('BCDeliveries.pl').
+:- consult('BCDeliveries_2.pl').
 :- consult('BCDadosTrucks.pl').
 :- consult('BCWarehouses.pl').
 :- consult('BCRoutes.pl').
-:-include('directory.pl').
 
-%cidadeArmazem(<codigo>).
-cidadeArmazem("005").
-
-%dadosCam_t_e_ta(<cidade_origem>,<cidade_destino>,<tempo>,<energia>,<tempo_adicional>).
-dadosCam_t_e_ta("001","002",122,42,0).
-dadosCam_t_e_ta("001","003",122,46,0).
-dadosCam_t_e_ta("001","004",151,54,25).
-dadosCam_t_e_ta("001","005",147,52,25).
-dadosCam_t_e_ta("001","006",74,24,0).
-dadosCam_t_e_ta("001","007",116,35,0).
-dadosCam_t_e_ta("001","008",141,46,0).
-dadosCam_t_e_ta("001","009",185,74,53).
-dadosCam_t_e_ta("001","010",97,30,0).
-dadosCam_t_e_ta("001","011",164,64,40).
-dadosCam_t_e_ta("001","012",76,23,0).
-dadosCam_t_e_ta("001","013",174,66,45).
-dadosCam_t_e_ta("001","014",59,18,0).
-dadosCam_t_e_ta("001","015",132,51,24).
-dadosCam_t_e_ta("001","016",181,68,45).
-dadosCam_t_e_ta("001","017",128,45,0).
-
-dadosCam_t_e_ta("002","001",116,42,0).
-dadosCam_t_e_ta("002","003",55,22,0).
-dadosCam_t_e_ta("002","004",74,25,0).
-dadosCam_t_e_ta("002","005",65,22,0).
-dadosCam_t_e_ta("002","006",69,27,0).
-dadosCam_t_e_ta("002","007",74,38,0).
-dadosCam_t_e_ta("002","008",61,18,0).
-dadosCam_t_e_ta("002","009",103,44,0).
-dadosCam_t_e_ta("002","010",36,14,0).
-dadosCam_t_e_ta("002","011",88,41,0).
-dadosCam_t_e_ta("002","012",61,19,0).
-dadosCam_t_e_ta("002","013",95,42,0).
-dadosCam_t_e_ta("002","014",78,34,0).
-dadosCam_t_e_ta("002","015",69,30,0).
-dadosCam_t_e_ta("002","016",99,38,0).
-dadosCam_t_e_ta("002","017",46,14,0).
-
-dadosCam_t_e_ta("003","001",120,45,0).
-dadosCam_t_e_ta("003","002",50,22,0).
-dadosCam_t_e_ta("003","004",46,15,0).
-dadosCam_t_e_ta("003","005",46,14,0).
-dadosCam_t_e_ta("003","006",74,37,0).
-dadosCam_t_e_ta("003","007",63,23,0).
-dadosCam_t_e_ta("003","008",38,8,0).
-dadosCam_t_e_ta("003","009",84,36,0).
-dadosCam_t_e_ta("003","010",59,28,0).
-dadosCam_t_e_ta("003","011",61,27,0).
-dadosCam_t_e_ta("003","012",67,32,0).
-dadosCam_t_e_ta("003","013",67,29,0).
-dadosCam_t_e_ta("003","014",82,38,0).
-dadosCam_t_e_ta("003","015",34,8,0).
-dadosCam_t_e_ta("003","016",80,30,0).
-dadosCam_t_e_ta("003","017",36,10,0).
-
-dadosCam_t_e_ta("004","001",149,54,25).
-dadosCam_t_e_ta("004","002",65,24,0).
-dadosCam_t_e_ta("004","003",46,16,0).
-dadosCam_t_e_ta("004","005",27,10,0).
-dadosCam_t_e_ta("004","006",103,47,0).
-dadosCam_t_e_ta("004","007",55,27,0).
-dadosCam_t_e_ta("004","008",36,10,0).
-dadosCam_t_e_ta("004","009",50,26,0).
-dadosCam_t_e_ta("004","010",78,34,0).
-dadosCam_t_e_ta("004","011",42,19,0).
-dadosCam_t_e_ta("004","012",97,42,0).
-dadosCam_t_e_ta("004","013",44,11,0).
-dadosCam_t_e_ta("004","014",111,48,0).
-dadosCam_t_e_ta("004","015",32,13,0).
-dadosCam_t_e_ta("004","016",53,14,0).
-dadosCam_t_e_ta("004","017",38,11,0).
-
-dadosCam_t_e_ta("005","001",141,51,24).
-dadosCam_t_e_ta("005","002",55,20,0).
-dadosCam_t_e_ta("005","003",48,14,0).
-dadosCam_t_e_ta("005","004",25,9,0).
-dadosCam_t_e_ta("005","006",97,44,0).
-dadosCam_t_e_ta("005","007",55,28,0).
-dadosCam_t_e_ta("005","008",29,7,0).
-dadosCam_t_e_ta("005","009",48,24,0).
-dadosCam_t_e_ta("005","010",69,30,0).
-dadosCam_t_e_ta("005","011",53,26,0).
-dadosCam_t_e_ta("005","012",95,36,0).
-dadosCam_t_e_ta("005","013",63,20,0).
-dadosCam_t_e_ta("005","014",105,45,0).
-dadosCam_t_e_ta("005","015",34,14,0).
-dadosCam_t_e_ta("005","016",46,18,0).
-dadosCam_t_e_ta("005","017",27,7,0).
-
-dadosCam_t_e_ta("006","001",69,23,0).
-dadosCam_t_e_ta("006","002",71,27,0).
-dadosCam_t_e_ta("006","003",74,38,0).
-dadosCam_t_e_ta("006","004",103,46,0).
-dadosCam_t_e_ta("006","005",99,44,0).
-dadosCam_t_e_ta("006","007",88,48,0).
-dadosCam_t_e_ta("006","008",92,38,0).
-dadosCam_t_e_ta("006","009",134,66,45).
-dadosCam_t_e_ta("006","010",42,14,0).
-dadosCam_t_e_ta("006","011",116,56,30).
-dadosCam_t_e_ta("006","012",23,9,0).
-dadosCam_t_e_ta("006","013",126,58,33).
-dadosCam_t_e_ta("006","014",25,9,0).
-dadosCam_t_e_ta("006","015",84,44,0).
-dadosCam_t_e_ta("006","016",132,60,35).
-dadosCam_t_e_ta("006","017",80,38,0).
-
-dadosCam_t_e_ta("007","001",116,36,0).
-dadosCam_t_e_ta("007","002",71,38,0).
-dadosCam_t_e_ta("007","003",61,22,0).
-dadosCam_t_e_ta("007","004",53,26,0).
-dadosCam_t_e_ta("007","005",53,28,0).
-dadosCam_t_e_ta("007","006",88,48,0).
-dadosCam_t_e_ta("007","008",59,26,0).
-dadosCam_t_e_ta("007","009",88,48,0).
-dadosCam_t_e_ta("007","010",84,44,0).
-dadosCam_t_e_ta("007","011",74,22,0).
-dadosCam_t_e_ta("007","012",82,42,0).
-dadosCam_t_e_ta("007","013",76,31,0).
-dadosCam_t_e_ta("007","014",97,49,21).
-dadosCam_t_e_ta("007","015",29,16,0).
-dadosCam_t_e_ta("007","016",84,42,0).
-dadosCam_t_e_ta("007","017",69,30,0).
-
-dadosCam_t_e_ta("008","001",134,46,0).
-dadosCam_t_e_ta("008","002",59,18,0).
-dadosCam_t_e_ta("008","003",32,6,0).
-dadosCam_t_e_ta("008","004",34,10,0).
-dadosCam_t_e_ta("008","005",32,7,0).
-dadosCam_t_e_ta("008","006",88,38,0).
-dadosCam_t_e_ta("008","007",57,26,0).
-dadosCam_t_e_ta("008","009",69,30,0).
-dadosCam_t_e_ta("008","010",65,26,0).
-dadosCam_t_e_ta("008","011",53,22,0).
-dadosCam_t_e_ta("008","012",82,34,0).
-dadosCam_t_e_ta("008","013",61,24,0).
-dadosCam_t_e_ta("008","014",97,40,0).
-dadosCam_t_e_ta("008","015",36,12,0).
-dadosCam_t_e_ta("008","016",65,23,0).
-dadosCam_t_e_ta("008","017",32,6,0).
-
-dadosCam_t_e_ta("009","001",181,72,50).
-dadosCam_t_e_ta("009","002",95,41,0).
-dadosCam_t_e_ta("009","003",86,35,0).
-dadosCam_t_e_ta("009","004",55,24,0).
-dadosCam_t_e_ta("009","005",48,23,0).
-dadosCam_t_e_ta("009","006",134,65,42).
-dadosCam_t_e_ta("009","007",95,47,0).
-dadosCam_t_e_ta("009","008",69,28,0).
-dadosCam_t_e_ta("009","010",109,51,24).
-dadosCam_t_e_ta("009","011",61,29,0).
-dadosCam_t_e_ta("009","012",132,57,31).
-dadosCam_t_e_ta("009","013",67,19,0).
-dadosCam_t_e_ta("009","014",143,66,45).
-dadosCam_t_e_ta("009","015",71,34,0).
-dadosCam_t_e_ta("009","016",15,3,0).
-dadosCam_t_e_ta("009","017",67,28,0).
-
-dadosCam_t_e_ta("010","001",97,30,0).
-dadosCam_t_e_ta("010","002",34,14,0).
-dadosCam_t_e_ta("010","003",59,27,0).
-dadosCam_t_e_ta("010","004",78,33,0).
-dadosCam_t_e_ta("010","005",71,30,0).
-dadosCam_t_e_ta("010","006",40,14,0).
-dadosCam_t_e_ta("010","007",82,42,0).
-dadosCam_t_e_ta("010","008",65,24,0).
-dadosCam_t_e_ta("010","009",109,52,25).
-dadosCam_t_e_ta("010","011",92,46,0).
-dadosCam_t_e_ta("010","012",32,6,0).
-dadosCam_t_e_ta("010","013",99,46,0).
-dadosCam_t_e_ta("010","014",63,17,0).
-dadosCam_t_e_ta("010","015",74,34,0).
-dadosCam_t_e_ta("010","016",105,46,0).
-dadosCam_t_e_ta("010","017",53,23,0).
-
-dadosCam_t_e_ta("011","001",164,65,42).
-dadosCam_t_e_ta("011","002",88,41,0).
-dadosCam_t_e_ta("011","003",65,28,0).
-dadosCam_t_e_ta("011","004",42,18,0).
-dadosCam_t_e_ta("011","005",55,25,0).
-dadosCam_t_e_ta("011","006",118,57,31).
-dadosCam_t_e_ta("011","007",74,23,0).
-dadosCam_t_e_ta("011","008",59,23,0).
-dadosCam_t_e_ta("011","009",63,28,0).
-dadosCam_t_e_ta("011","010",97,46,0).
-dadosCam_t_e_ta("011","012",111,52,25).
-dadosCam_t_e_ta("011","013",25,7,0).
-dadosCam_t_e_ta("011","014",126,58,33).
-dadosCam_t_e_ta("011","015",53,25,0).
-dadosCam_t_e_ta("011","016",59,27,0).
-dadosCam_t_e_ta("011","017",67,27,0).
-
-dadosCam_t_e_ta("012","001",76,23,0).
-dadosCam_t_e_ta("012","002",61,19,0).
-dadosCam_t_e_ta("012","003",67,32,0).
-dadosCam_t_e_ta("012","004",97,41,0).
-dadosCam_t_e_ta("012","005",92,38,0).
-dadosCam_t_e_ta("012","006",19,8,0).
-dadosCam_t_e_ta("012","007",82,42,0).
-dadosCam_t_e_ta("012","008",86,33,0).
-dadosCam_t_e_ta("012","009",128,61,37).
-dadosCam_t_e_ta("012","010",32,6,0).
-dadosCam_t_e_ta("012","011",109,50,23).
-dadosCam_t_e_ta("012","013",120,53,26).
-dadosCam_t_e_ta("012","014",40,10,0).
-dadosCam_t_e_ta("012","015",78,38,0).
-dadosCam_t_e_ta("012","016",126,54,28).
-dadosCam_t_e_ta("012","017",74,32,0).
-
-dadosCam_t_e_ta("013","001",174,65,42).
-dadosCam_t_e_ta("013","002",107,35,0).
-dadosCam_t_e_ta("013","003",74,29,0).
-dadosCam_t_e_ta("013","004",46,11,0).
-dadosCam_t_e_ta("013","005",67,20,0).
-dadosCam_t_e_ta("013","006",128,57,31).
-dadosCam_t_e_ta("013","007",80,30,0).
-dadosCam_t_e_ta("013","008",76,20,0).
-dadosCam_t_e_ta("013","009",67,20,0).
-dadosCam_t_e_ta("013","010",105,47,0).
-dadosCam_t_e_ta("013","011",27,7,0).
-dadosCam_t_e_ta("013","012",122,52,25).
-dadosCam_t_e_ta("013","014",137,58,33).
-dadosCam_t_e_ta("013","015",67,17,0).
-dadosCam_t_e_ta("013","016",59,15,0).
-dadosCam_t_e_ta("013","017",78,22,0).
-
-dadosCam_t_e_ta("014","001",59,18,0).
-dadosCam_t_e_ta("014","002",80,35,0).
-dadosCam_t_e_ta("014","003",80,38,0).
-dadosCam_t_e_ta("014","004",109,46,0).
-dadosCam_t_e_ta("014","005",105,45,0).
-dadosCam_t_e_ta("014","006",27,9,0).
-dadosCam_t_e_ta("014","007",97,48,0).
-dadosCam_t_e_ta("014","008",99,38,0).
-dadosCam_t_e_ta("014","009",143,66,45).
-dadosCam_t_e_ta("014","010",61,17,0).
-dadosCam_t_e_ta("014","011",122,57,31).
-dadosCam_t_e_ta("014","012",42,10,0).
-dadosCam_t_e_ta("014","013",132,58,35).
-dadosCam_t_e_ta("014","015",90,44,0).
-dadosCam_t_e_ta("014","016",139,61,37).
-dadosCam_t_e_ta("014","017",86,38,0).
-
-dadosCam_t_e_ta("015","001",132,51,24).
-dadosCam_t_e_ta("015","002",74,30,0).
-dadosCam_t_e_ta("015","003",34,8,0).
-dadosCam_t_e_ta("015","004",36,12,0).
-dadosCam_t_e_ta("015","005",36,14,0).
-dadosCam_t_e_ta("015","006",86,44,0).
-dadosCam_t_e_ta("015","007",34,16,0).
-dadosCam_t_e_ta("015","008",42,13,0).
-dadosCam_t_e_ta("015","009",71,35,0).
-dadosCam_t_e_ta("015","010",82,36,0).
-dadosCam_t_e_ta("015","011",53,25,0).
-dadosCam_t_e_ta("015","012",80,38,0).
-dadosCam_t_e_ta("015","013",69,18,0).
-dadosCam_t_e_ta("015","014",95,45,0).
-dadosCam_t_e_ta("015","016",69,29,0).
-dadosCam_t_e_ta("015","017",53,17,0).
-
-dadosCam_t_e_ta("016","001",179,68,45).
-dadosCam_t_e_ta("016","002",92,37,0).
-dadosCam_t_e_ta("016","003",84,31,0).
-dadosCam_t_e_ta("016","004",57,16,0).
-dadosCam_t_e_ta("016","005",46,18,0).
-dadosCam_t_e_ta("016","006",132,60,35).
-dadosCam_t_e_ta("016","007",92,42,0).
-dadosCam_t_e_ta("016","008",67,23,0).
-dadosCam_t_e_ta("016","009",15,3,0).
-dadosCam_t_e_ta("016","010",105,46,0).
-dadosCam_t_e_ta("016","011",57,28,0).
-dadosCam_t_e_ta("016","012",130,52,25).
-dadosCam_t_e_ta("016","013",61,15,0).
-dadosCam_t_e_ta("016","014",141,61,37).
-dadosCam_t_e_ta("016","015",69,29,0).
-dadosCam_t_e_ta("016","017",65,24,0).
-
-dadosCam_t_e_ta("017","001",128,46,0).
-dadosCam_t_e_ta("017","002",42,14,0).
-dadosCam_t_e_ta("017","003",40,11,0).
-dadosCam_t_e_ta("017","004",42,13,0).
-dadosCam_t_e_ta("017","005",34,10,0).
-dadosCam_t_e_ta("017","006",82,38,0).
-dadosCam_t_e_ta("017","007",74,30,0).
-dadosCam_t_e_ta("017","008",29,6,0).
-dadosCam_t_e_ta("017","009",69,31,0).
-dadosCam_t_e_ta("017","010",55,24,0).
-dadosCam_t_e_ta("017","011",69,29,0).
-dadosCam_t_e_ta("017","012",80,30,0).
-dadosCam_t_e_ta("017","013",82,23,0).
-dadosCam_t_e_ta("017","014",90,38,0).
-dadosCam_t_e_ta("017","015",53,18,0).
-dadosCam_t_e_ta("017","016",67,25,0).
+%Cors
+:-set_setting(http:cors, [*]).
 
 
-:- dynamic idArmazem/2.
-:- dynamic carateristicasCam/6.
-:- dynamic entrega/6.
-
-
-% Criacao de servidor HTTP no porto 'Port'
+% Cria��o de servidor HTTP no porto 'Port'
 server(Port) :-
-        http_server(http_dispatch, [port(Port)]),
-		importarInformacao().
+        http_server(http_dispatch, [port(Port)]).
 
-stopServer:-
-    retract(port(Port)),
-    http_stop_server(Port,_).
+trim(S, T) :-
+  string_codes(S, C), phrase(trimmed(D), C), string_codes(T, D).
+  
+trimmed(S) --> blanks, string(S), blanks, eos, !.
 
-:- initialization(server(64172)).
 
-/* base de conhecimento dinâmica: obtem as entregas e os camioes do MDWM e do MDL*/
-importarInformacao():-
-    addWarehouses(),
-    addTrucks(),
-    addDeliveries().
-
-addWarehouses():-
-	http_open('https://localhost:5001/api/warehouse', ResultJSON, []),
-	json_read_dict(ResultJSON, ResultObj),
-	warehouseInfo(ResultObj, ResultValue),
-	createWarehouse(ResultValue),
-	close(ResultJSON).
-
-/* dá os pormenores relativos aos armazens */
-warehouseInfo([],[]).
-warehouseInfo([H|T],[H.id,H.designacaoArmazem.designation|L]):-
-	warehouseInfo(T, L).
-
-createWarehouse([]).
-createWarehouse([I,D|L]):-
-	assert(idArmazem(I,D)),
-	createWarehouse(L).
-
-deleteWarehouse():-
-    retract(idArmazem(_,_)),
-    fail.
-
-addTrucks():- http_open('http://localhost:3000/api/truck', ResultJSON, []),
-	json_read_dict(ResultJSON, ResultObj),
-	truckInfo(ResultObj, ResultValue),
-	createTruck(ResultValue),
-	close(ResultJSON).
-
-truckInfo([],[]).
-truckInfo([H|T],[Designacao,H.tare,H.capacity,H.maxBatteryCapacity,H.autonomy,H.chargingTime|L]):-
-	atom_string(H.designation, X),
-  	atom_string(Designacao, X),
-	truckInfo(T, L).
-
-createTruck([]).
-createTruck([D,T,MC,MB,A,CT|L]):- write(D),nl,
-	assert(carateristicasCam(D,T,MC,MB,A,CT)),
-	createTruck(L).
-
-deleteTruck():- retract(carateristicasCam(_,_,_,_,_,_)),
-    fail.
-
-/* obtem as entregas do MDWM*/
-addDeliveries():- http_open('https://localhost:5001/api/Deliveries', ResultJSON, []),
-	json_read_dict(ResultJSON, ResultObj),
-	deliveryInfo(ResultObj, ResultValue),
-	/*cria a entrega*/
-	createDelivery(ResultValue),
-	close(ResultJSON).
-
-deliveryInfo([],[]).
-deliveryInfo([H|T],[(H.deliveryId, date, H.mass.valor, H.armazemID.value, H.tempoCarga.minutos, H.tempoDescarga.minutos)|L]):-
-  atom_number(H.data, X),
-  atom_number(date, X),
-  deliveryInfo(T, L).
-
-createDelivery([]).
-createDelivery([(DeliveryId,Date,Mass, WarehouseId,TimeLoad,TimeUnload)|L]):-
-	assert(entrega(DeliveryId,Date,Mass,WarehouseId,TimeLoad,TimeUnload)),
-	createDelivery(L).
-
-deleteDelivery():- retract(entrega(_,_,_,_,_,_)), fail.
 
 :-dynamic geracoes/1.
 :-dynamic populacao/1.
@@ -405,15 +56,9 @@ deleteDelivery():- retract(entrega(_,_,_,_,_,_)), fail.
 :-dynamic prob_mutacao/1.
 
 
-% tarefa(Id,TempoProcessamento,TempConc,PesoPenalizacao).
-tarefa(t1,2,5,1).
-tarefa(t2,4,7,6).
-tarefa(t3,1,11,2).
-tarefa(t4,3,9,3).
-tarefa(t5,3,8,2).
 
-% tarefas(NTarefas).
-tarefas(5).
+% deliveries(NDeliveries).
+deliveries(5).
 
 /*teremos que saber quantidade de novas geracoes, a dimensao de uma populacao,
  probabilidade de mutação e cruzamento para o algoritmo genetico*/
@@ -431,7 +76,7 @@ inicializa:-write('Numero de novas Geracoes: '),read(NG),
 
 gera:- inicializa,
 	determinar_quantidade_camioes(NeededTrucks),
-	determinar_entregas_por_camiao(DistributionResult,NeededTrucks),
+	distribution_of_deliveries(DistributionResult,NeededTrucks),
 	gera_populacao(Pop),
 	write('Pop='),write(Pop),nl,
 	valida_populacao(Pop,NeededTrucks,DistributionResult,[],PopAtualizada),
@@ -449,7 +94,7 @@ gera:- inicializa,
 	write('Tempo Viagem: '),write(RouteTime).
 
 /* vai fazer o calculo do peso de todas as entregas para calcular o numero de camioes necessários*/
-determinar_quantidade_camioes(NeededTrucks):- findall(Mass,entrega(_,'20230110',Mass,_,_,_),Cargas),
+determinar_quantidade_camioes(NeededTrucks):- findall(Mass,entrega(_,20221205,Mass,_,_,_),Cargas),
 	obter_carga_total(Cargas,0,CargaTotal),
 	carateristicasCam(eTruck01,_,CapacidadeCarga,_,_,_),
 	NumberOfTrucks is CargaTotal/CapacidadeCarga,
@@ -462,15 +107,15 @@ obter_carga_total([H|T],CargaTotal1,CargaTotal):- CargaTotal2 is CargaTotal1+H,
 
 number_of_trucks(NumberOfTrucks,NeededTrucks):- ParteInteira is float_integer_part(NumberOfTrucks),
 	ParteDecimal is float_fractional_part(NumberOfTrucks),
-	((ParteDecimal > 0.75,ed is ParteInteira+2);ed is ParteInteira+1).
+	((ParteDecimal > 0.75,NeededTrucks is ParteInteira+2);NeededTrucks is ParteInteira+1).
 
-distribution_of_deliveries(DistributionResult,NeededTrucks):- entregas(NEntregas),
+distribution_of_deliveries(DistributionResult,NeededTrucks):- deliveries(NEntregas),
 	DistributionResultAux is NEntregas/NeededTrucks,
 	DistributionResult is float_integer_part(DistributionResultAux).
 
 gera_populacao(Pop):- populacao(TamPop),
 	/*procura todas as entregas/tarefas*/
-	findall(WarehouseChegada,entrega(_,'20230109',_,WarehouseChegada,_,_),WarehousesL),
+	findall(WarehouseChegada,entrega(_,20221205,_,WarehouseChegada,_,_),WarehousesL),
 	length(WarehousesL, NumE),
 	gera_populacao(TamPop,WarehousesL,NumE,Pop).
 
@@ -479,8 +124,8 @@ gera_populacao(0,_,_,[]):-!.
 
 gera_populacao(TamPop,WarehousesL,NumE,[Ind|Resto]):- TamPop1 is TamPop-1,
 	gera_populacao(TamPop1,WarehousesL,NumE,Resto),
-	((TamPop1 == 0, bestRouteNearestWarehouse('20230109', eTruck01, Ind, _),!);
-	((TamPop1 == 1, bestRouteBestRelation('20230109', eTruck01, Ind, _),!);
+	((TamPop1 == 0, bestRouteNearestWarehouse(20221205, eTruck01, Ind, _),!);
+	((TamPop1 == 1, bestRouteBestRelation(20221205, eTruck01, Ind, _),!);
 	(gera_individuo(WarehousesL,NumE,Ind)))),
 	not(member(Ind,Resto)).
 	
@@ -502,8 +147,8 @@ avalia_individuo(_,_,_,_,2,ViagemValida):- ViagemValida is 0,!.
 
 avalia_individuo(Ind,AvaliacoesRealizadas,NeededTrucks,DistributionResult,0,ViagemValida):-
 	((AvaliacoesRealizadas < (NeededTrucks), obter_x_elementos(DistributionResult,Ind,EntregasCamiao),
-  obterCargaCamiao('20230110',EntregasCamiao,CargaViagem,CargaTotal), Flag is 0);
-  (obterCargaCamiao('20230110',Ind,CargaViagem,CargaTotal),Flag is 2)),
+  getLoadTruck(20221205,EntregasCamiao,CargaViagem,CargaTotal), Flag is 0);
+  (getLoadTruck(20221205,Ind,CargaViagem,CargaTotal),Flag is 2)),
 	((CargaTotal > 4300,avalia_individuo(_,NeededTrucks,NeededTrucks,_,1,ViagemValida));
 	(AvaliacaoAtualizada is AvaliacoesRealizadas+1,remover_x_elementos(DistributionResult,Ind,IndAtualizada),
 	avalia_individuo(IndAtualizada,AvaliacaoAtualizada,NeededTrucks,DistributionResult,Flag,ViagemValida))).
@@ -536,20 +181,21 @@ retira(N,[G1|Resto],G,[G1|Resto1]):-
 	retira(N1,Resto,G,Resto1).
 
 /*quando chegar a lista vazia para avaliar*/
-avalia_populacao([],[]). 
+avalia_populacao([],[],_,_). 
 /*vai chamar o avalia do tempo para obter qual é o tempo da viagem para ficar guardado em cada individuo da populacao, 
 que tem associado a ele as varias entregas e o tempo */
 avalia_populacao([Ind|Resto],[Ind*V|Resto1],NeededTrucks,DistributionResult):-
 	Camioes is truncate(NeededTrucks),
-	obter_tempo_viagem(Ind,0,0,Camioes,DistributionResult,V),
+	% obter_tempo_viagem(Ind,0,0,Camioes,DistributionResult,V),
+  determineTime(20221205,eTruck01, Ind, V),
 	avalia_populacao(Resto,Resto1,NeededTrucks,DistributionResult).
 
 obter_tempo_viagem(_,Tempo,Camioes,Camioes,_,TempoMaior):- TempoMaior is Tempo, !.
 
 obter_tempo_viagem(Ind,Tempo,TemposCalculados,NeededTrucks,DistributionResult,TempoMaior):-
 	((TemposCalculados < (NeededTrucks - 1), obter_x_elementos(DistributionResult,Ind,EntregasCamiao),
-  determinarTempo('20230110',eTruck01, EntregasCamiao, TempoViagem));
-  (determinarTempo('20230110',eTruck01, Ind, TempoViagem))),
+  determineTime(20221205,eTruck01, EntregasCamiao, TempoViagem));
+  (determineTime(20221205,eTruck01, Ind, TempoViagem))),
 	((TempoViagem > Tempo, NovoTempo is TempoViagem);(NovoTempo is Tempo)),
 	remover_x_elementos(DistributionResult,Ind,IndAtualizada),
 	VezesCalculadas is TemposCalculados+1,
@@ -657,7 +303,7 @@ retirar_elementos_extra([Ind*Tempo*Prob|ListaProdutoRestantesOrd],NP,[Ind*Tempo|
 
 gerar_pontos_cruzamento(P1,P2):- gerar_pontos_cruzamento1(P1,P2).
 
-gerar_pontos_cruzamento1(P1,P2):- entregas(N),
+gerar_pontos_cruzamento1(P1,P2):- deliveries(N),
 	NTemp is N+1,
 	random(1,NTemp,P11),
 	random(1,NTemp,P21),
@@ -697,7 +343,7 @@ sublista1([X|R1],1,N2,[X|R2]):-!,
 sublista1([_|R1],N1,N2,[h|R2]):- N3 is N1 - 1, N4 is N2 - 1,
 	sublista1(R1,N3,N4,R2).
 
-rotate_right(L,K,L1):- entregas(N),
+rotate_right(L,K,L1):- deliveries(N),
 	T is N - K,
 	rr(T,L,L1).
 
@@ -717,7 +363,7 @@ elimina([_|R1],L,R2):- elimina(R1,L,R2).
 
 insere([],L,_,L):-!.
 
-insere([X|R],L,N,L2):- entregas(T),
+insere([X|R],L,N,L2):- deliveries(T),
 	((N>T,!,N1 is N mod T);N1 = N),
 	insere1(X,N1,L,L1),
 	N2 is N + 1,
@@ -730,7 +376,7 @@ insere1(X,N,[Y|L],[Y|L1]):- N1 is N-1,
 	insere1(X,N1,L,L1).
 
 cruzar(Ind1,Ind2,P1,P2,NInd11):- sublista(Ind1,P1,P2,Sub1),
-	tarefas(NumT),
+	deliveries(NumT),
 	R is NumT-P2,
 	rotate_right(Ind2,R,Ind21),
 	elimina(Ind21,Sub1,Sub2),
