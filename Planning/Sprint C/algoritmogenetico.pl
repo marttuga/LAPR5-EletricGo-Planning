@@ -99,6 +99,8 @@ gera:- inicializa,
 determinar_quantidade_camioes(NeededTrucks):- findall(Mass,entrega(_,20221205,Mass,_,_,_),Cargas),
 	obter_carga_total(Cargas,0,CargaTotal),
 	carateristicasCam(eTruck01,_,CapacidadeCarga,_,_,_),
+	/*o numero de camiões será a carga total, ou seja, já com encomendas incluidas
+	 a dividir pela capacidade que 1 camião pode transportar*/
 	NumberOfTrucks is CargaTotal/CapacidadeCarga,
 	number_of_trucks(NumberOfTrucks,NeededTrucks).
 
@@ -107,6 +109,7 @@ obter_carga_total([],CargaTotal,CargaTotal):-!.
 obter_carga_total([H|T],CargaTotal1,CargaTotal):- CargaTotal2 is CargaTotal1+H,
 	obter_carga_total(T,CargaTotal2,CargaTotal).
 
+/*número de camiões necessários */
 number_of_trucks(NumberOfTrucks,NeededTrucks):- ParteInteira is float_integer_part(NumberOfTrucks),
 	ParteDecimal is float_fractional_part(NumberOfTrucks),
 	((ParteDecimal > 0.75,NeededTrucks is ParteInteira+2);NeededTrucks is ParteInteira+1).
@@ -141,19 +144,22 @@ gera_individuo(WarehousesL,NumT,[G|Resto]):- NumTemp is NumT + 1, % To use with 
 	NumT1 is NumT-1,
 	gera_individuo(NovaLista,NumT1,Resto).
 
-
+/* Validation is 1: quando ele acabou as validações já não é valido*/
 avalia_individuo(_,_,_,_,1,ViagemValida):- ViagemValida is 1,!.
 
-avalia_individuo(_,_,_,_,2,ViagemValida):- ViagemValida is 0,!.
+avalia_individuo(_,_,_,_,-1,ViagemValida):- ViagemValida is 0,!.
 
 
 avalia_individuo(Ind,AvaliacoesRealizadas,NeededTrucks,DistributionResult,0,ViagemValida):-
 	((AvaliacoesRealizadas < (NeededTrucks), obter_x_elementos(DistributionResult,Ind,EntregasCamiao),
-  getLoadTruck(20221205,EntregasCamiao,CargaViagem,CargaTotal), Flag is 0);
-  (getLoadTruck(20221205,Ind,CargaViagem,CargaTotal),Flag is 2)),
+	/* Validation is 0: enquanto tem avaliações para fazer e ele ainda está válido*/
+  getLoadTruck(20221205,EntregasCamiao,CargaViagem,CargaTotal), Validation is 0);
+  /* Validation is -1: quando já acabou as avaliações todas e ele efetivamente é válido*/
+  (getLoadTruck(20221205,Ind,CargaViagem,CargaTotal),Validation is -1)),
+	/* valida se as cargas a comparar com 4300 para validar a viagem*/
 	((CargaTotal > 4300,avalia_individuo(_,NeededTrucks,NeededTrucks,_,1,ViagemValida));
 	(AvaliacaoAtualizada is AvaliacoesRealizadas+1,remover_x_elementos(DistributionResult,Ind,IndAtualizada),
-	avalia_individuo(IndAtualizada,AvaliacaoAtualizada,NeededTrucks,DistributionResult,Flag,ViagemValida))).
+	avalia_individuo(IndAtualizada,AvaliacaoAtualizada,NeededTrucks,DistributionResult,Validation,ViagemValida))).
 
 valida_populacao([],_,_,PopResultante,PopAtualizada):- PopAtualizada = PopResultante,!.
 
@@ -270,13 +276,13 @@ write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
 	N1 is N+1,
 	get_time(Tf),
 	TempEx is Tf-TempoInicial,
-	verificar_tempo_execucao(TempEx,TempoMaximo,FlagFim),
+	verificar_tempo_execucao(TempEx,TempoMaximo,ValidationFim),
 	verificar_populacao_estabilizada(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais),
-	gera_geracao(N1,G,ProxGeracaoOrd,TempoInicial,TempoMaximo,FlagFim,GeracoesIguais,Estabilizacao,BestRoute,NeededTrucks,DistributionResult).
+	gera_geracao(N1,G,ProxGeracaoOrd,TempoInicial,TempoMaximo,ValidationFim,GeracoesIguais,Estabilizacao,BestRoute,NeededTrucks,DistributionResult).
 
 
 
-verificar_tempo_execucao(TempEx,TempoMaximo,FlagFim):-  ((TempEx < TempoMaximo, FlagFim is 0);(FlagFim is 0)).
+verificar_tempo_execucao(TempEx,TempoMaximo,ValidationFim):-  ((TempEx < TempoMaximo, ValidationFim is 0);(ValidationFim is 0)).
 
 verificar_populacao_estabilizada(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais):-
 	((verificar_semelhanca_populacoes(Pop,ProxGeracaoOrd), !, GeracoesIguais is GeracoesIguaisAnt+1);
