@@ -76,7 +76,7 @@ inicializa:-write('Numero de novas Geracoes: '),read(NG),
 
 
 gera:- inicializa,
-	determinar_quantidade_camioes(NeededTrucks),
+	determineNumTrucks(NeededTrucks),
 	distribution_of_deliveries(DistributionResult,NeededTrucks),
 	gera_populacao(Pop),
 	write('Pop='),write(Pop),nl,
@@ -87,27 +87,27 @@ gera:- inicializa,
 	ordena_populacao(PopAv,PopOrd),
 	geracoes(NG),
 	get_time(TempoExecucao),
-	TempoMaximo is 3600,
+	MaxTime is 3600,
 	Estabilizacao is 1, 
 	GeracoesIguais is 0,
-	gera_geracao(0,NG,PopOrd,TempoExecucao,TempoMaximo,0,GeracoesIguais,Estabilizacao,BestRoute*RouteTime,NeededTrucks,DistributionResult),nl,nl,
+	gera_geracao(0,NG,PopOrd,TempoExecucao,MaxTime,0,GeracoesIguais,Estabilizacao,BestRoute*RouteTime,NeededTrucks,DistributionResult),nl,nl,
 	/* com base na melhor viagem e na heuristica de melhor tempo de viagem*/
 	write('Melhor Viagem: '),write(BestRoute),nl,
 	write('Tempo Viagem: '),write(RouteTime).
 
 /* vai fazer o calculo do peso de todas as entregas para calcular o numero de camioes necessários*/
-determinar_quantidade_camioes(NeededTrucks):- findall(Mass,entrega(_,20221205,Mass,_,_,_),Cargas),
-	obter_carga_total(Cargas,0,CargaTotal),
-	carateristicasCam(eTruck01,_,CapacidadeCarga,_,_,_),
+determineNumTrucks(NeededTrucks):- findall(Mass,entrega(_,20221205,Mass,_,_,_),Cargas),
+	getTotalLoad(Cargas,0,TotalLoad),
+	carateristicasCam(eTruck01,_,LoadCapacity,_,_,_),
 	/*o numero de camiões será a carga total, ou seja, já com encomendas incluidas
 	 a dividir pela capacidade que 1 camião pode transportar*/
-	NumberOfTrucks is CargaTotal/CapacidadeCarga,
+	NumberOfTrucks is TotalLoad/LoadCapacity,
 	number_of_trucks(NumberOfTrucks,NeededTrucks).
 
-obter_carga_total([],CargaTotal,CargaTotal):-!.
+getTotalLoad([],TotalLoad,TotalLoad):-!.
 
-obter_carga_total([H|T],CargaTotal1,CargaTotal):- CargaTotal2 is CargaTotal1+H,
-	obter_carga_total(T,CargaTotal2,CargaTotal).
+getTotalLoad([H|T],TotalLoad1,TotalLoad):- TotalLoad2 is TotalLoad1+H,
+	getTotalLoad(T,TotalLoad2,TotalLoad).
 
 /*número de camiões necessários */
 number_of_trucks(NumberOfTrucks,NeededTrucks):- ParteInteira is float_integer_part(NumberOfTrucks),
@@ -153,11 +153,11 @@ avalia_individuo(_,_,_,_,-1,ViagemValida):- ViagemValida is 0,!.
 avalia_individuo(Ind,AvaliacoesRealizadas,NeededTrucks,DistributionResult,0,ViagemValida):-
 	((AvaliacoesRealizadas < (NeededTrucks), obter_x_elementos(DistributionResult,Ind,EntregasCamiao),
 	/* Validation is 0: enquanto tem avaliações para fazer e ele ainda está válido*/
-  getLoadTruck(20221205,EntregasCamiao,CargaViagem,CargaTotal), Validation is 0);
+  getLoadTruck(20221205,EntregasCamiao,CargaViagem,TotalLoad), Validation is 0);
   /* Validation is -1: quando já acabou as avaliações todas e ele efetivamente é válido*/
-  (getLoadTruck(20221205,Ind,CargaViagem,CargaTotal),Validation is -1)),
+  (getLoadTruck(20221205,Ind,CargaViagem,TotalLoad),Validation is -1)),
 	/* valida se as cargas a comparar com 4300 para validar a viagem*/
-	((CargaTotal > 4300,avalia_individuo(_,NeededTrucks,NeededTrucks,_,1,ViagemValida));
+	((TotalLoad > 4300,avalia_individuo(_,NeededTrucks,NeededTrucks,_,1,ViagemValida));
 	(AvaliacaoAtualizada is AvaliacoesRealizadas+1,remover_x_elementos(DistributionResult,Ind,IndAtualizada),
 	avalia_individuo(IndAtualizada,AvaliacaoAtualizada,NeededTrucks,DistributionResult,Validation,ViagemValida))).
 
@@ -198,13 +198,13 @@ avalia_populacao([Ind|Resto],[Ind*V|Resto1],NeededTrucks,DistributionResult):-
   determineTime(20221205,eTruck01, Ind, V),
 	avalia_populacao(Resto,Resto1,NeededTrucks,DistributionResult).
 
-obter_tempo_viagem(_,Tempo,Camioes,Camioes,_,TempoMaior):- TempoMaior is Tempo, !.
+obter_tempo_viagem(_,Time,Camioes,Camioes,_,TempoMaior):- TempoMaior is Time, !.
 
-obter_tempo_viagem(Ind,Tempo,TemposCalculados,NeededTrucks,DistributionResult,TempoMaior):-
+obter_tempo_viagem(Ind,Time,TemposCalculados,NeededTrucks,DistributionResult,TempoMaior):-
 	((TemposCalculados < (NeededTrucks - 1), obter_x_elementos(DistributionResult,Ind,EntregasCamiao),
   determineTime(20221205,eTruck01, EntregasCamiao, TempoViagem));
   (determineTime(20221205,eTruck01, Ind, TempoViagem))),
-	((TempoViagem > Tempo, NovoTempo is TempoViagem);(NovoTempo is Tempo)),
+	((TempoViagem > Time, NovoTempo is TempoViagem);(NovoTempo is Time)),
 	remover_x_elementos(DistributionResult,Ind,IndAtualizada),
 	VezesCalculadas is TemposCalculados+1,
 	obter_tempo_viagem(IndAtualizada,NovoTempo,VezesCalculadas,NeededTrucks,DistributionResult,TempoMaior).
@@ -255,7 +255,7 @@ gera_geracao(G,_,Pop,_,_,0,Estabilizacao,Estabilizacao,BestRoute,_,_):-!,
 	write('Geracao '), write(G), write(':'), nl, write(Pop), nl,
 	write('Geracao Estabilizada.'),nl.
 
-gera_geracao(N,G,Pop,TempoInicial,TempoMaximo,0,GeracoesIguaisAnt,Estabilizacao,BestRoute,NeededTrucks,DistributionResult):-
+gera_geracao(N,G,Pop,TempoInicial,MaxTime,0,GeracoesIguaisAnt,Estabilizacao,BestRoute,NeededTrucks,DistributionResult):-
 write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
 	random_permutation(Pop,PopAleatoria),
 	cruzamento(PopAleatoria,NPop1),
@@ -276,13 +276,13 @@ write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
 	N1 is N+1,
 	get_time(Tf),
 	TempEx is Tf-TempoInicial,
-	verificar_tempo_execucao(TempEx,TempoMaximo,ValidationFim),
+	executionTime(TempEx,MaxTime,ValidationFim),
 	verificar_populacao_estabilizada(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais),
-	gera_geracao(N1,G,ProxGeracaoOrd,TempoInicial,TempoMaximo,ValidationFim,GeracoesIguais,Estabilizacao,BestRoute,NeededTrucks,DistributionResult).
+	gera_geracao(N1,G,ProxGeracaoOrd,TempoInicial,MaxTime,ValidationFim,GeracoesIguais,Estabilizacao,BestRoute,NeededTrucks,DistributionResult).
 
 
 
-verificar_tempo_execucao(TempEx,TempoMaximo,ValidationFim):-  ((TempEx < TempoMaximo, ValidationFim is 0);(ValidationFim is 0)).
+executionTime(TempEx,MaxTime,ValidationFim):- ((TempEx < MaxTime, ValidationFim is 0);(ValidationFim is 0)).
 
 verificar_populacao_estabilizada(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais):-
 	((verificar_semelhanca_populacoes(Pop,ProxGeracaoOrd), !, GeracoesIguais is GeracoesIguaisAnt+1);
@@ -298,14 +298,14 @@ obter_melhores([Ind|NPopOrd],P,[Ind|Melhores],Restantes):-
 	obter_melhores(NPopOrd,P1,Melhores,Restantes).
 
 probabilidade_restantes([],[]):-!.
-probabilidade_restantes([Ind*Tempo|Restantes],[Ind*Tempo*Prob|ListaProb]):-
+probabilidade_restantes([Ind*Time|Restantes],[Ind*Time*Prob|ListaProb]):-
 	probabilidade_restantes(Restantes,ListaProb), 
-	random(0.0,1.0,NumAl), Prob is NumAl * Tempo.
+	random(0.0,1.0,NumAl), Prob is NumAl * Time.
 
 
 retirar_elementos_extra([H|ListaProdutoRestantesOrd], 0, []).
 /*Lista dos escolhidos será a lista dos melhores*/
-retirar_elementos_extra([Ind*Tempo*Prob|ListaProdutoRestantesOrd],NP,[Ind*Tempo|ListaEscolhidos]):- NP1 is NP-1,
+retirar_elementos_extra([Ind*Time*Prob|ListaProdutoRestantesOrd],NP,[Ind*Time|ListaEscolhidos]):- NP1 is NP-1,
 	retirar_elementos_extra(ListaProdutoRestantesOrd,NP1,ListaEscolhidos).
 
 
