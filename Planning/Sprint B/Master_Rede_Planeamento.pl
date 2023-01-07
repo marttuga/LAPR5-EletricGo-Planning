@@ -201,7 +201,7 @@ importRoutes(Request) :-
         concat(Dir, 'BCRoutes.pl', Path),
         get_routes(Path).
 
-/*
+
 % Tratamento de 'http://localhost:64172/importDeliveries'
 importDeliveries(Request) :-
         cors_enable(Request, [methods([get])]),
@@ -211,7 +211,73 @@ importDeliveries(Request) :-
         get_deliveries(Path).*/
 
 
+/* base de conhecimento dinâmica: obtem as entregas e os camioes do MDWM e do MDL*/
+importarInformacao():-
+    addWarehouses(),
+    addTrucks(),
+    addDeliveries().
 
+addWarehouses():-
+	http_open('https://localhost:5001/api/warehouse/getAll', ResultJSON, []),
+	json_read_dict(ResultJSON, ResultObj),
+	warehouseInfo(ResultObj, ResultValue),
+	createWarehouse(ResultValue),
+	close(ResultJSON).
+
+/* dá os pormenores relativos aos armazens */
+warehouseInfo([],[]).
+warehouseInfo([H|T],[H.id,H.designacaoArmazem.designation|L]):-
+	warehouseInfo(T, L).
+
+createWarehouse([]).
+createWarehouse([I,D|L]):-
+	assert(idArmazem(I,D)),
+	createWarehouse(L).
+
+deleteWarehouse():-
+    retract(idArmazem(_,_)),
+    fail.
+
+addTrucks():- http_open('http://localhost:3000/api/truck/getAll', ResultJSON, []),
+	json_read_dict(ResultJSON, ResultObj),
+	truckInfo(ResultObj, ResultValue),
+	createTruck(ResultValue),
+	close(ResultJSON).
+
+truckInfo([],[]).
+truckInfo([H|T],[Designacao,H.tare,H.capacity,H.maxBatteryCapacity,H.autonomy,H.chargingTime|L]):-
+	atom_string(H.designation, X),
+  	atom_string(Designacao, X),
+	truckInfo(T, L).
+
+createTruck([]).
+createTruck([D,T,MC,MB,A,CT|L]):- write(D),nl,
+	assert(carateristicasCam(D,T,MC,MB,A,CT)),
+	createTruck(L).
+
+deleteTruck():- retract(carateristicasCam(_,_,_,_,_,_)),
+    fail.
+
+/* obtem as entregas do MDWM*/
+addDeliveries():- http_open('https://localhost:5001/api/Deliveries/getAll', ResultJSON, []),
+	json_read_dict(ResultJSON, ResultObj),
+	deliveryInfo(ResultObj, ResultValue),
+	/*cria a entrega*/
+	createDelivery(ResultValue),
+	close(ResultJSON).
+
+deliveryInfo([],[]).
+deliveryInfo([H|T],[(H.deliveryId, date, H.mass.valor, H.armazemID.value, H.tempoCarga.minutos, H.tempoDescarga.minutos)|L]):-
+  atom_number(H.data, X),
+  atom_number(date, X),
+  deliveryInfo(T, L).
+
+createDelivery([]).
+createDelivery([(DeliveryId,Date,Mass, WarehouseId,TimeLoad,TimeUnload)|L]):-
+	assert(entrega(DeliveryId,Date,Mass,WarehouseId,TimeLoad,TimeUnload)),
+	createDelivery(L).
+
+deleteDelivery():- retract(entrega(_,_,_,_,_,_)), fail.
 
 
 
