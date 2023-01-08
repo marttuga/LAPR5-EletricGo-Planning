@@ -194,20 +194,20 @@ avalia_populacao([],[],_,_).
 que tem associado a ele as varias entregas e o tempo */
 avalia_populacao([Ind|Resto],[Ind*V|Resto1],NeededTrucks,DistributionResult):-
 	Camioes is truncate(NeededTrucks),
-	% obter_tempo_viagem(Ind,0,0,Camioes,DistributionResult,V),
   determineTime(20221205,eTruck01, Ind, V),
 	avalia_populacao(Resto,Resto1,NeededTrucks,DistributionResult).
 
-obter_tempo_viagem(_,Time,Camioes,Camioes,_,TempoMaior):- TempoMaior is Time, !.
+time_of_travel(_,Time,Camioes,Camioes,_,TempoMaior):- TempoMaior is Time, !.
 
-obter_tempo_viagem(Ind,Time,TemposCalculados,NeededTrucks,DistributionResult,TempoMaior):-
+/*obtem o tempo de viagem*/
+time_of_travel(Ind,Time,TemposCalculados,NeededTrucks,DistributionResult,TempoMaior):-
 	((TemposCalculados < (NeededTrucks - 1), obter_x_elementos(DistributionResult,Ind,EntregasCamiao),
   determineTime(20221205,eTruck01, EntregasCamiao, TempoViagem));
   (determineTime(20221205,eTruck01, Ind, TempoViagem))),
 	((TempoViagem > Time, NovoTempo is TempoViagem);(NovoTempo is Time)),
 	remover_x_elementos(DistributionResult,Ind,IndAtualizada),
 	VezesCalculadas is TemposCalculados+1,
-	obter_tempo_viagem(IndAtualizada,NovoTempo,VezesCalculadas,NeededTrucks,DistributionResult,TempoMaior).
+	time_of_travel(IndAtualizada,NovoTempo,VezesCalculadas,NeededTrucks,DistributionResult,TempoMaior).
 
 ordena_populacao(PopAv,PopAvOrd):- bsort(PopAv,PopAvOrd).
 
@@ -265,48 +265,54 @@ write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
 	append(Pop, NPopAv, Populacao),
 	sort(Populacao, Aux),
 	ordena_populacao(Aux,NPopOrd),
-	obter_melhores(NPopOrd,2,Melhores,Restantes),
-	probabilidade_restantes(Restantes,ProbRestantes),
+	best_to_next(NPopOrd,2,Melhores,Restantes),
+	prob_other_elem(Restantes,ProbRestantes),
 	ordena_populacao_probabilidade(ProbRestantes,ProbRestantesOrd),
 	populacao(TamPop),
 	ElementosEmFalta is TamPop-2,
-	retirar_elementos_extra(ProbRestantesOrd,ElementosEmFalta,ListaEscolhidos),
+	choose_from_remaining(ProbRestantesOrd,ElementosEmFalta,ListaEscolhidos),
 	append(Melhores,ListaEscolhidos,ProxGeracao),
 	ordena_populacao(ProxGeracao,ProxGeracaoOrd),
 	N1 is N+1,
 	get_time(Tf),
 	TempEx is Tf-TempoInicial,
 	executionTime(TempEx,MaxTime,ValidationFim),
-	verificar_populacao_estabilizada(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais),
+	stabilized_pop(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais),
 	gera_geracao(N1,G,ProxGeracaoOrd,TempoInicial,MaxTime,ValidationFim,GeracoesIguais,Estabilizacao,BestRoute,NeededTrucks,DistributionResult).
-
 
 
 executionTime(TempEx,MaxTime,ValidationFim):- ((TempEx < MaxTime, ValidationFim is 0);(ValidationFim is 0)).
 
-verificar_populacao_estabilizada(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais):-
-	((verificar_semelhanca_populacoes(Pop,ProxGeracaoOrd), !, GeracoesIguais is GeracoesIguaisAnt+1);
+/*para uma populaçao ser considerada estabilizada, a geracao resultante tem de ser igual à anterior
+Para isso, recorre-se ao método semelhanca para verificar essa igualdade */
+stabilized_pop(Pop,ProxGeracaoOrd,GeracoesIguaisAnt,GeracoesIguais):-
+	((equality_between_pop(Pop,ProxGeracaoOrd), !, GeracoesIguais is GeracoesIguaisAnt+1);
 	(GeracoesIguais is 0)).
 
-verificar_semelhanca_populacoes([],[]):-!.
-verificar_semelhanca_populacoes([P1|Populacao],[P2|ProxGeracao]):- P1=P2, 
-	verificar_semelhanca_populacoes(Populacao,ProxGeracao).
+/*verifica se existe semelhanca entre as populaçoes*/
+equality_between_pop([],[]):-!.
+equality_between_pop([P1|Populacao],[P2|ProxGeracao]):- P1=P2, 
+	equality_between_pop(Populacao,ProxGeracao).
 
-obter_melhores([H|NPopOrd], 0, [],[H|NPopOrd]).
-obter_melhores([Ind|NPopOrd],P,[Ind|Melhores],Restantes):-
+/*obtem os melhores para a proxima geracao*/
+best_to_next([H|NPopOrd], 0, [],[H|NPopOrd]).
+best_to_next([Ind|NPopOrd],P,[Ind|Melhores],Restantes):-
 	P1 is P-1,
-	obter_melhores(NPopOrd,P1,Melhores,Restantes).
+	best_to_next(NPopOrd,P1,Melhores,Restantes).
 
-probabilidade_restantes([],[]):-!.
-probabilidade_restantes([Ind*Time|Restantes],[Ind*Time*Prob|ListaProb]):-
-	probabilidade_restantes(Restantes,ListaProb), 
+/*o resto dos elementos terá uma probabilidade igual ao numero aleatorio entre o 0 ou o 1 vezes o tempo*/
+prob_other_elem([],[]):-!.
+prob_other_elem([Ind*Time|Restantes],[Ind*Time*Prob|ListaProb]):-
+	prob_other_elem(Restantes,ListaProb), 
 	random(0.0,1.0,NumAl), Prob is NumAl * Time.
 
 
-retirar_elementos_extra([H|ListaProdutoRestantesOrd], 0, []).
-/*Lista dos escolhidos será a lista dos melhores*/
-retirar_elementos_extra([Ind*Time*Prob|ListaProdutoRestantesOrd],NP,[Ind*Time|ListaEscolhidos]):- NP1 is NP-1,
-	retirar_elementos_extra(ListaProdutoRestantesOrd,NP1,ListaEscolhidos).
+
+choose_from_remaining([H|ListaProdutoRestantesOrd], 0, []).
+/*Lista dos escolhidos será a lista dos que permanecem para a proxima geraçao
+tendo em conta que serão sempre igual ao numero do tamanho da populacao menos os 2 melhores que já estao decididos */
+choose_from_remaining([Ind*Time*Prob|ListaProdutoRestantesOrd],NP,[Ind*Time|ListaEscolhidos]):- NP1 is NP-1,
+	choose_from_remaining(ListaProdutoRestantesOrd,NP1,ListaEscolhidos).
 
 
 /* geração dos pontos de cruzamento P1 (onde começa o corte) e P2 (onde acaba o corte), 
