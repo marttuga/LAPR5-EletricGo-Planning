@@ -79,11 +79,11 @@ gera:- inicializa,
 	determineNumTrucks(NeededTrucks),
 	distribution_of_deliveries(DistributionResult,NeededTrucks),
 	gera_populacao(Pop),
-	write('Pop='),write(Pop),nl,
+	nl, write('Pop='),write(Pop),nl,
 	valida_populacao(Pop,NeededTrucks,DistributionResult,[],PopAtualizada),
 	avalia_populacao(PopAtualizada,PopAv,NeededTrucks,DistributionResult),
 	/*viagens e tempo associado*/
-	write('PopAv='),write(PopAv),nl,
+	write('PopAv='),write(PopAv),nl,nl,
 	ordena_populacao(PopAv,PopOrd),
 	geracoes(NG),
 	get_time(TempoExecucao),
@@ -94,6 +94,7 @@ gera:- inicializa,
 	/* com base na melhor viagem e na heuristica de melhor tempo de viagem*/
 	write('Melhor Viagem: '),write(BestRoute),nl,
 	write('Tempo Viagem: '),write(RouteTime).
+	
 
 /* vai fazer o calculo do peso de todas as entregas para calcular o numero de camioes necessários*/
 determineNumTrucks(NeededTrucks):- findall(Mass,entrega(_,20221205,Mass,_,_,_),Cargas),
@@ -246,14 +247,14 @@ gera_geracao(G,G,Pop,_,_,0,_,_,BestRoute,_,_):-!,
 	write('Geracao '), write(G), write(':'), nl, write(Pop), nl.
 
 gera_geracao(G,_,Pop,_,_,1,_,_,BestRoute,_,_):-!,
-	Pop = [BestRoute|_],
-	write('Geracao '), write(G), write(':'), nl, write(Pop), nl,
-	write('Tempo Maximo Atingido.'),nl.
+	Pop = [BestRoute|_], nl.
+	/*write('Geracao '), write(G), write(':'), nl, write(Pop), nl,
+	write('Tempo Maximo Atingido.'),nl.*/
 
 gera_geracao(G,_,Pop,_,_,0,Estabilizacao,Estabilizacao,BestRoute,_,_):-!,
-	Pop = [BestRoute|_],
-	write('Geracao '), write(G), write(':'), nl, write(Pop), nl,
-	write('Geracao Estabilizada.'),nl.
+	Pop = [BestRoute|_], nl.
+	/*write('Geracao '), write(G), write(':'), nl, write(Pop), nl,
+	write('Geracao Estabilizada.'),nl.*/
 
 gera_geracao(N,G,Pop,TempoInicial,MaxTime,0,GeracoesIguaisAnt,Estabilizacao,BestRoute,NeededTrucks,DistributionResult):-
 write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
@@ -529,7 +530,7 @@ bfsNearestWarehouse(Departure,[W|RemainingWarehouses],[NextWarehouse|Route]):-ne
 
 
 bestRouteNearestWarehouse(Date,Truck,Route,Time):-warehouseRoute(Date,VisitWarehouse),idArmazem('Matosinhos',WId),bfsNearestWarehouse(WId,VisitWarehouse,Route),
-                                               determineTime(Date,Truck,Route,Time), ! , format('Fastest Time rounded: ~3f~n', [Time]).
+                                               determineTime(Date,Truck,Route,Time), !.
 
 
 /*##### HEURISTICA 2- ENTREGA MAIOR MASSA*/
@@ -545,7 +546,7 @@ bfsWarehousePlusMass(Date,[W|RemainingWarehouses],[NextWarehouse|Route]):-delive
 
 
 bestRoutePlusMass(Date,Truck,Route,Time):-warehouseRoute(Date,VisitWarehouse),bfsWarehousePlusMass(Date,VisitWarehouse,Route),
-                                        determineTime(Date,Truck,Route,Time), !,deliveryPlusMass(VisitWarehouse,Date,GreaterMass,_), format('Greater Mass: ~0f~n', [GreaterMass]), format('Fastest Time rounded: ~3f~n', [Time]).
+                                        determineTime(Date,Truck,Route,Time), !,deliveryPlusMass(VisitWarehouse,Date,GreaterMass,_).
 
 
 /*##### HEURISTICA 3- COMBINAR TEMPO COM MASSA */
@@ -561,7 +562,7 @@ bfsBestRelation(Date,Departure,[W|RemainingWarehouses],[NextWarehouse|Route]):-b
 
 
 bestRouteBestRelation(Date,Truck,Route,Time):-warehouseRoute(Date,VisitWarehouse),idArmazem('Matosinhos',WId),bfsBestRelation(Date,WId,VisitWarehouse,Route),
-                                             determineTime(Date,Truck,Route,Time), !,bestRelationDelivery(WId,VisitWarehouse,Date,BestRelation,_), format('Best Relation Mass/Time: ~3f~n', [BestRelation]), format('Fastest Time rounded: ~3f~n', [Time]).
+                                             determineTime(Date,Truck,Route,Time), !,bestRelationDelivery(WId,VisitWarehouse,Date,BestRelation,_).
 
 
 
