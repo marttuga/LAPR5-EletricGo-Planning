@@ -191,8 +191,10 @@ retira(N,[G1|Resto],G,[G1|Resto1]):-
 
 /*quando chegar a lista vazia para avaliar*/
 avalia_populacao([],[],_,_). 
-/*vai chamar o avalia do tempo para obter qual é o tempo da viagem para ficar guardado em cada individuo da populacao, 
+/*vai chamar o avalia do tempo para obter qual é o tempo da viagem para ficar guardado em cada individuo(camiao) da populacao, 
 que tem associado a ele as varias entregas e o tempo */
+/* vai avaliar todos os indivíduos da população (cada indivíduo é uma lista com todas as tarefas) e coloca o tempo de cada viagem no
+respetivo individuo*/
 avalia_populacao([Ind|Resto],[Ind*V|Resto1],NeededTrucks,DistributionResult):-
 	Camioes is truncate(NeededTrucks),
   determineTime(20221205,eTruck01, Ind, V),
@@ -203,6 +205,7 @@ time_of_travel(_,Time,Camioes,Camioes,_,TempoMaior):- TempoMaior is Time, !.
 /*obtem o tempo de viagem*/
 time_of_travel(Ind,Time,TemposCalculados,NeededTrucks,DistributionResult,TempoMaior):-
 	((TemposCalculados < (NeededTrucks - 1), obter_x_elementos(DistributionResult,Ind,EntregasCamiao),
+	/*determina o tempo com base no sprint passado*/
   determineTime(20221205,eTruck01, EntregasCamiao, TempoViagem));
   (determineTime(20221205,eTruck01, Ind, TempoViagem))),
 	((TempoViagem > Time, NovoTempo is TempoViagem);(NovoTempo is Time)),
@@ -210,6 +213,7 @@ time_of_travel(Ind,Time,TemposCalculados,NeededTrucks,DistributionResult,TempoMa
 	VezesCalculadas is TemposCalculados+1,
 	time_of_travel(IndAtualizada,NovoTempo,VezesCalculadas,NeededTrucks,DistributionResult,TempoMaior).
 
+/*Ordenação dos elementos da população em ordem crescente das avaliações pelo tempo associado*/
 ordena_populacao(PopAv,PopAvOrd):- bsort(PopAv,PopAvOrd).
 
 bsort([X],[X]):-!.
